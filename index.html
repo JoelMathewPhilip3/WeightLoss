@@ -606,15 +606,32 @@ function saveTarget(){
 
 function drawChart(){
   const canvas=document.getElementById("weightChart");
-  const ctx=canvas.getContext("2d");
-
-  ctx.clearRect(0,0,canvas.width,canvas.height);
 
   weights.sort((a,b)=>new Date(a.date)-new Date(b.date));
 
   const latest = weights[weights.length-1];
-  const start = new Date(weights[0].date + "T00:00:00");
+
+  const earliestWeightDate = new Date(weights[0].date + "T00:00:00");
+
+  // Start x-axis at the first day of the earliest entered month.
+  // So if you add an older weight date, the graph automatically expands backward.
+  const start = new Date(
+    earliestWeightDate.getFullYear(),
+    earliestWeightDate.getMonth(),
+    1
+  );
+
   const end = proposalDate;
+
+  const months = monthsBetween(start, end) + 1;
+
+  // Wider graph = more breathing room.
+  // Increase 180 to 220 if you want even more spacing.
+  canvas.width = Math.max(1100, months * 180);
+  canvas.height = 520;
+
+  const ctx=canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
   const padL=80, padR=40, padT=35, padB=75;
   const chartW=canvas.width-padL-padR;
@@ -644,16 +661,16 @@ function drawChart(){
   ctx.font="15px Arial";
   ctx.fillText(`Target: ${targetWeight} kg`, padL+10, y(targetWeight)-10);
 
-  ctx.strokeStyle="#f5c451";
-  ctx.lineWidth=3;
-  ctx.beginPath();
+ctx.strokeStyle="#f5c451";
+ctx.lineWidth=3;
+ctx.setLineDash([]);
 
-  weights.forEach((pt,i)=>{
-    if(i===0) ctx.moveTo(x(pt.date), y(pt.weight));
-    else ctx.lineTo(x(pt.date), y(pt.weight));
-  });
+const weightPoints = weights.map(pt => ({
+  x: x(pt.date),
+  y: y(pt.weight)
+}));
 
-  ctx.stroke();
+drawSmoothLine(ctx, weightPoints);
 
   weights.forEach(pt=>{
     ctx.fillStyle="#f5c451";
@@ -679,6 +696,39 @@ function drawChart(){
   ctx.font="bold 17px Arial";
   ctx.fillText("Weight Loss Mission Graph", padL, 24);
 
+  function monthsBetween(startDate, endDate){
+  return (
+    (endDate.getFullYear() - startDate.getFullYear()) * 12 +
+    (endDate.getMonth() - startDate.getMonth())
+  );
+}
+
+function drawSmoothLine(ctx, points){
+  if(points.length === 0) return;
+
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+
+  if(points.length === 1){
+    ctx.stroke();
+    return;
+  }
+
+  for(let i = 0; i < points.length - 1; i++){
+    const current = points[i];
+    const next = points[i + 1];
+
+    const midX = (current.x + next.x) / 2;
+    const midY = (current.y + next.y) / 2;
+
+    ctx.quadraticCurveTo(current.x, current.y, midX, midY);
+  }
+
+  const last = points[points.length - 1];
+  ctx.lineTo(last.x, last.y);
+  ctx.stroke();
+}
+  
   document.getElementById("currentWeightText").textContent = latest.weight;
   document.getElementById("targetWeightText").textContent = targetWeight;
   document.getElementById("targetWeightInput").value = targetWeight;
