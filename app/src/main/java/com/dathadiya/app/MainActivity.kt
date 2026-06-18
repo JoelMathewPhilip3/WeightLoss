@@ -29,7 +29,7 @@ class MainActivity : Activity() {
         settings.builtInZoomControls = false
         settings.displayZoomControls = false
 
-        webView.loadUrl("https://joelmathewphilip.github.io/WeightLoss/")
+        webView.loadUrl("https://joelmathewphilip3.github.io/WeightLoss/")
     }
 
     override fun onBackPressed() {
