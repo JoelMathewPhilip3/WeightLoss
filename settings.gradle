@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "WeightLoss"
 include ":app"
+include ":wear"
