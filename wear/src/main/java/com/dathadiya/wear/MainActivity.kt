@@ -5,33 +5,46 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.SetOptions
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
+import kotlin.math.roundToInt
 
 class MainActivity : Activity() {
 
     private lateinit var db: FirebaseFirestore
-    private lateinit var mainLayout: LinearLayout
+    private lateinit var root: LinearLayout
     private lateinit var statusText: TextView
+    private lateinit var summaryCard: LinearLayout
     private lateinit var missionContainer: LinearLayout
-    private lateinit var weightText: TextView
+    private lateinit var weightScreen: LinearLayout
 
-    private val docPathCollection = "daThadiyaUsers"
-    private val docPathDocument = "joel"
+    private val collectionName = "daThadiyaUsers"
+    private val documentName = "joel"
+    private val today = todayKey()
 
-    private var today = todayKey()
     private var missionsByDate: MutableMap<String, Any> = mutableMapOf()
     private var completions: MutableMap<String, Any> = mutableMapOf()
     private var dayResults: MutableMap<String, Any> = mutableMapOf()
+    private var permanentMissions: MutableList<String> = mutableListOf()
     private var weights: MutableList<MutableMap<String, Any>> = mutableListOf()
-    private var tempWeight = 98.7
+    private var targetWeight: Double = 91.0
+    private var tempWeight: Double = 98.7
 
     private val defaultMissions = listOf(
         "10,000 steps",
@@ -44,10 +57,14 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         initFirebase()
         buildUi()
-        listenToFirestore()
+        fetchOnce()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::db.isInitialized) fetchOnce()
     }
 
     private fun initFirebase() {
@@ -64,114 +81,91 @@ class MainActivity : Activity() {
         }
 
         db = FirebaseFirestore.getInstance()
+        db.firestoreSettings = FirebaseFirestoreSettings.Builder()
+            .setPersistenceEnabled(true)
+            .build()
     }
 
     private fun buildUi() {
         val scroll = ScrollView(this)
-        scroll.setBackgroundColor(Color.parseColor("#070b14"))
+        scroll.setBackgroundColor(BLACK)
 
-        mainLayout = LinearLayout(this)
-        mainLayout.orientation = LinearLayout.VERTICAL
-        mainLayout.gravity = Gravity.CENTER_HORIZONTAL
-        mainLayout.setPadding(dp(10), dp(12), dp(10), dp(20))
+        root = LinearLayout(this)
+        root.orientation = LinearLayout.VERTICAL
+        root.gravity = Gravity.CENTER_HORIZONTAL
+        root.setPadding(dp(8), dp(10), dp(8), dp(24))
 
-        val title = TextView(this)
-        title.text = "DA THADIYA"
-        title.setTextColor(Color.parseColor("#f5c451"))
-        title.textSize = 18f
-        title.typeface = Typeface.DEFAULT_BOLD
+        val title = text("DA THADIYA", 18f, GOLD, true)
         title.gravity = Gravity.CENTER
-        mainLayout.addView(title)
+        root.addView(title, matchWrap())
 
-        statusText = TextView(this)
-        statusText.text = "Syncing..."
-        statusText.setTextColor(Color.parseColor("#94a3b8"))
-        statusText.textSize = 10f
+        statusText = text("Loading...", 10f, MUTED, false)
         statusText.gravity = Gravity.CENTER
-        mainLayout.addView(statusText)
+        root.addView(statusText, matchWrap())
+
+        summaryCard = LinearLayout(this)
+        summaryCard.orientation = LinearLayout.VERTICAL
+        summaryCard.gravity = Gravity.CENTER
+        summaryCard.setPadding(dp(10), dp(12), dp(10), dp(14))
+        root.addView(summaryCard, matchWrap(top = 12))
 
         missionContainer = LinearLayout(this)
         missionContainer.orientation = LinearLayout.VERTICAL
         missionContainer.gravity = Gravity.CENTER_HORIZONTAL
-        mainLayout.addView(missionContainer)
+        root.addView(missionContainer, matchWrap())
 
-        val weightTitle = TextView(this)
-        weightTitle.text = "WEIGHT"
-        weightTitle.setTextColor(Color.WHITE)
-        weightTitle.textSize = 15f
-        weightTitle.typeface = Typeface.DEFAULT_BOLD
-        weightTitle.gravity = Gravity.CENTER
-        weightTitle.setPadding(0, dp(18), 0, dp(6))
-        mainLayout.addView(weightTitle)
+        weightScreen = LinearLayout(this)
+        weightScreen.orientation = LinearLayout.VERTICAL
+        weightScreen.gravity = Gravity.CENTER_HORIZONTAL
+        weightScreen.setPadding(0, dp(12), 0, dp(8))
+        root.addView(weightScreen, matchWrap())
 
-        weightText = TextView(this)
-        weightText.text = "--.- kg"
-        weightText.setTextColor(Color.parseColor("#f5c451"))
-        weightText.textSize = 24f
-        weightText.typeface = Typeface.DEFAULT_BOLD
-        weightText.gravity = Gravity.CENTER
-        mainLayout.addView(weightText)
-
-        val weightButtons = LinearLayout(this)
-        weightButtons.orientation = LinearLayout.HORIZONTAL
-        weightButtons.gravity = Gravity.CENTER
-        weightButtons.setPadding(0, dp(8), 0, dp(8))
-
-        val minus = makeSmallButton("-0.1")
-        val plus = makeSmallButton("+0.1")
-
-        minus.setOnClickListener {
-            tempWeight = roundOne(tempWeight - 0.1)
-            updateWeightText()
-        }
-
-        plus.setOnClickListener {
-            tempWeight = roundOne(tempWeight + 0.1)
-            updateWeightText()
-        }
-
-        weightButtons.addView(minus)
-        weightButtons.addView(plus)
-        mainLayout.addView(weightButtons)
-
-        val saveWeight = makeWideButton("SAVE WEIGHT")
-        saveWeight.setOnClickListener {
-            saveWeightToFirestore()
-        }
-        mainLayout.addView(saveWeight)
-
-        scroll.addView(mainLayout)
+        scroll.addView(root)
         setContentView(scroll)
     }
 
-    private fun listenToFirestore() {
-        db.collection(docPathCollection)
-            .document(docPathDocument)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    statusText.text = "Sync error"
-                    return@addSnapshotListener
-                }
+    private fun fetchOnce() {
+        statusText.text = "Syncing..."
 
-                if (snapshot == null || !snapshot.exists()) {
+        db.collection(collectionName)
+            .document(documentName)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                if (snapshot.exists()) {
+                    applyCloudData(snapshot.data ?: emptyMap())
+                    ensureTodayMissions()
+                    renderAll()
+                    statusText.text = "Sync: loaded"
+                } else {
                     createInitialDocument()
-                    return@addSnapshotListener
                 }
-
-                val data = snapshot.data ?: return@addSnapshotListener
-
-                missionsByDate = (data["missionsByDate"] as? Map<String, Any>)?.toMutableMap() ?: mutableMapOf()
-                completions = (data["completions"] as? Map<String, Any>)?.toMutableMap() ?: mutableMapOf()
-                dayResults = (data["dayResults"] as? Map<String, Any>)?.toMutableMap() ?: mutableMapOf()
-
-                val rawWeights = data["weights"] as? List<Map<String, Any>> ?: emptyList()
-                weights = rawWeights.map { it.toMutableMap() }.toMutableList()
-
-                ensureTodayMissions()
-                loadLatestWeight()
-                renderMissions()
-                statusText.text = "Sync connected"
             }
+            .addOnFailureListener {
+                statusText.text = "Sync: offline cache"
+                renderAll()
+            }
+    }
+
+    private fun applyCloudData(data: Map<String, Any>) {
+        missionsByDate = (data["missionsByDate"] as? Map<String, Any>)?.toMutableMap() ?: mutableMapOf()
+        completions = (data["completions"] as? Map<String, Any>)?.toMutableMap() ?: mutableMapOf()
+        dayResults = (data["dayResults"] as? Map<String, Any>)?.toMutableMap() ?: mutableMapOf()
+
+        permanentMissions = (data["permanentMissions"] as? List<*>)
+            ?.mapNotNull { it?.toString() }
+            ?.toMutableList()
+            ?: mutableListOf()
+
+        targetWeight = when (val t = data["targetWeight"]) {
+            is Number -> t.toDouble()
+            is String -> t.toDoubleOrNull() ?: 91.0
+            else -> 91.0
+        }
+
+        val rawWeights = data["weights"] as? List<Map<String, Any>> ?: emptyList()
+        weights = rawWeights.map { it.toMutableMap() }.toMutableList()
+
+        loadLatestWeight()
     }
 
     private fun createInitialDocument() {
@@ -188,39 +182,81 @@ class MainActivity : Activity() {
             "missionsByDate" to missionsByDate,
             "completions" to completions,
             "dayResults" to dayResults,
+            "permanentMissions" to permanentMissions,
             "weights" to weights,
-            "targetWeight" to 91,
+            "targetWeight" to targetWeight,
             "updatedAt" to System.currentTimeMillis()
         )
 
-        db.collection(docPathCollection)
-            .document(docPathDocument)
+        db.collection(collectionName)
+            .document(documentName)
             .set(data, SetOptions.merge())
+            .addOnSuccessListener {
+                renderAll()
+                statusText.text = "Sync: created"
+            }
     }
 
     private fun ensureTodayMissions() {
-        if (!missionsByDate.containsKey(today)) {
-            missionsByDate[today] = defaultMissions
-            saveCoreData()
-        }
+        val existing = todayMissions().toMutableList()
+
+        val combined = linkedSetOf<String>()
+        combined.addAll(defaultMissions)
+        combined.addAll(permanentMissions)
+        combined.addAll(existing)
+
+        missionsByDate[today] = combined.toList()
     }
 
-    private fun todayMissions(): List<String> {
-        val raw = missionsByDate[today]
-        return when (raw) {
-            is List<*> -> raw.mapNotNull { it?.toString() }
-            else -> defaultMissions
-        }
+    private fun renderAll() {
+        renderSummary()
+        renderMissions()
+        renderWeightScreen()
     }
 
-    private fun todayCompletions(): MutableMap<String, Any> {
-        val raw = completions[today]
-        return when (raw) {
-            is Map<*, *> -> raw.entries.associate {
-                it.key.toString() to (it.value as? Boolean ?: false)
-            }.toMutableMap()
-            else -> mutableMapOf()
-        }
+    private fun renderSummary() {
+        summaryCard.removeAllViews()
+        summaryCard.background = roundedCard(DARK_CARD, GOLD, 18f)
+
+        val stats = missionStats()
+        val streak = currentStreak()
+        val pctColor = progressColor(stats.percent)
+
+        val todayLabel = text("Today", 14f, MUTED, true)
+        todayLabel.gravity = Gravity.CENTER
+        summaryCard.addView(todayLabel, matchWrap())
+
+        val doneLine = text("${stats.done} / ${stats.total} missions done", 17f, WHITE, true)
+        doneLine.gravity = Gravity.CENTER
+        summaryCard.addView(doneLine, matchWrap(top = 4))
+
+        val pct = text("${stats.percent}%", 34f, pctColor, true)
+        pct.gravity = Gravity.CENTER
+        summaryCard.addView(pct, matchWrap(top = 2))
+
+        val ring = ProgressRingView(this)
+        ring.progress = stats.percent
+        ring.ringColor = pctColor
+
+        val ringParams = LinearLayout.LayoutParams(dp(124), dp(124))
+        ringParams.setMargins(0, dp(8), 0, dp(8))
+        summaryCard.addView(ring, ringParams)
+
+        val weight = text("Weight", 12f, MUTED, true)
+        weight.gravity = Gravity.CENTER
+        summaryCard.addView(weight, matchWrap())
+
+        val weightValue = text(String.format(Locale.US, "%.1f kg", tempWeight), 22f, CYAN, true)
+        weightValue.gravity = Gravity.CENTER
+        summaryCard.addView(weightValue, matchWrap(top = 2))
+
+        val streakText = text("Streak  •  $streak days", 14f, GOLD, true)
+        streakText.gravity = Gravity.CENTER
+        summaryCard.addView(streakText, matchWrap(top = 8))
+
+        val hint = text("Scroll for missions and weight", 10f, MUTED, false)
+        hint.gravity = Gravity.CENTER
+        summaryCard.addView(hint, matchWrap(top = 8))
     }
 
     private fun renderMissions() {
@@ -228,33 +264,132 @@ class MainActivity : Activity() {
 
         val missions = todayMissions()
         val doneMap = todayCompletions()
+        val total = missions.size.coerceAtLeast(1)
 
-        missions.forEach { mission ->
-            val isDone = doneMap[mission] as? Boolean ?: false
-            val circle = makeMissionCircle(mission, isDone)
+        missions.forEachIndexed { index, mission ->
+            val done = doneMap[mission] as? Boolean ?: false
+            val card = missionCard(index + 1, total, mission, done)
 
-            circle.setOnClickListener {
+            card.setOnClickListener {
                 toggleMission(mission)
             }
 
-            missionContainer.addView(circle)
+            missionContainer.addView(card)
+        }
+
+        val stats = missionStats()
+        if (stats.percent == 100) {
+            val perfect = text(
+                "✓ Perfect Day\n${stats.done} / ${stats.total} complete",
+                18f,
+                GREEN,
+                true
+            )
+            perfect.gravity = Gravity.CENTER
+            perfect.background = roundedCard("#06160d", GREEN, 20f)
+            perfect.setPadding(dp(16), dp(18), dp(16), dp(18))
+            missionContainer.addView(perfect, matchWrap(top = 12, bottom = 10))
         }
     }
 
+    private fun renderWeightScreen() {
+        weightScreen.removeAllViews()
+
+        val title = text("Quick Weight", 16f, WHITE, true)
+        title.gravity = Gravity.CENTER
+        weightScreen.addView(title, matchWrap())
+
+        val value = text(String.format(Locale.US, "%.1f kg", tempWeight), 32f, CYAN, true)
+        value.gravity = Gravity.CENTER
+        weightScreen.addView(value, matchWrap(top = 4, bottom = 8))
+
+        val row1 = LinearLayout(this)
+        row1.gravity = Gravity.CENTER
+        row1.orientation = LinearLayout.HORIZONTAL
+        row1.addView(weightButton("-0.1") { adjustWeight(-0.1) })
+        row1.addView(weightButton("+0.1") { adjustWeight(0.1) })
+        weightScreen.addView(row1, matchWrap())
+
+        val row2 = LinearLayout(this)
+        row2.gravity = Gravity.CENTER
+        row2.orientation = LinearLayout.HORIZONTAL
+        row2.addView(weightButton("-0.5") { adjustWeight(-0.5) })
+        row2.addView(weightButton("+0.5") { adjustWeight(0.5) })
+        weightScreen.addView(row2, matchWrap(top = 6))
+
+        val save = pillButton("SAVE", GOLD, BLACK)
+        save.setOnClickListener {
+            saveWeight()
+        }
+        weightScreen.addView(save, fixedWrap(160, 48, top = 10, bottom = 8))
+
+        val refresh = pillButton("REFRESH", DARK_CARD, WHITE)
+        refresh.setOnClickListener {
+            fetchOnce()
+        }
+        weightScreen.addView(refresh, fixedWrap(160, 42, top = 4))
+    }
+
+    private fun missionCard(number: Int, total: Int, mission: String, done: Boolean): LinearLayout {
+        val size = dp(190)
+
+        val card = LinearLayout(this)
+        card.orientation = LinearLayout.VERTICAL
+        card.gravity = Gravity.CENTER
+        card.setPadding(dp(18), dp(16), dp(18), dp(16))
+
+        val color = if (done) GREEN else GOLD
+        val fill = if (done) "#052e16" else "#101418"
+
+        card.background = roundedCard(fill, color, 95f)
+
+        val progress = text("$number / $total", 12f, if (done) GREEN else GOLD, true)
+        progress.gravity = Gravity.CENTER
+        card.addView(progress, matchWrap())
+
+        val title = text(shortMission(mission), 19f, WHITE, true)
+        title.gravity = Gravity.CENTER
+        title.maxLines = 4
+        card.addView(title, matchWrap(top = 12))
+
+        val tap = text(if (done) "Tap to undo" else "Tap to complete", 11f, MUTED, false)
+        tap.gravity = Gravity.CENTER
+        card.addView(tap, matchWrap(top = 12))
+
+        val params = LinearLayout.LayoutParams(size, size)
+        params.setMargins(0, dp(12), 0, dp(12))
+        card.layoutParams = params
+
+        return card
+    }
+
     private fun toggleMission(mission: String) {
+        val statsBefore = missionStats()
+
         val doneMap = todayCompletions()
         val current = doneMap[mission] as? Boolean ?: false
-        doneMap[mission] = !current
+        val newValue = !current
+
+        doneMap[mission] = newValue
         completions[today] = doneMap
 
         updateDayResult()
+        renderAll()
 
-        db.collection(docPathCollection)
-            .document(docPathDocument)
+        val statsAfter = missionStats()
+
+        when {
+            statsAfter.percent == 100 && statsBefore.percent != 100 -> hapticStrong()
+            newValue -> hapticComplete()
+            else -> hapticUndo()
+        }
+
+        db.collection(collectionName)
+            .document(documentName)
             .set(
                 mapOf(
-                    "completions" to completions,
-                    "dayResults" to dayResults,
+                    "completions" to mapOf(today to doneMap),
+                    "dayResults" to mapOf(today to dayResults[today]),
                     "updatedAt" to System.currentTimeMillis()
                 ),
                 SetOptions.merge()
@@ -263,58 +398,18 @@ class MainActivity : Activity() {
                 statusText.text = "Mission saved"
             }
             .addOnFailureListener {
-                statusText.text = "Save failed"
+                statusText.text = "Mission offline"
             }
-
-        renderMissions()
     }
 
-    private fun updateDayResult() {
-        val missions = todayMissions()
-        val doneMap = todayCompletions()
-
-        val missed = missions.filter { mission ->
-            !(doneMap[mission] as? Boolean ?: false)
-        }
-
-        dayResults[today] = mapOf(
-            "status" to if (missed.isEmpty()) "green" else "red",
-            "missed" to missed
-        )
-    }
-
-    private fun loadLatestWeight() {
-        if (weights.isEmpty()) {
-            tempWeight = 98.7
-            updateWeightText()
-            return
-        }
-
-        val latest = weights.maxByOrNull {
-            it["date"].toString()
-        }
-
-        val value = latest?.get("weight")
-        tempWeight = when (value) {
-            is Number -> value.toDouble()
-            is String -> value.toDoubleOrNull() ?: 98.7
-            else -> 98.7
-        }
-
-        tempWeight = roundOne(tempWeight)
-        updateWeightText()
-    }
-
-    private fun saveWeightToFirestore() {
-        val todayDate = today
-
+    private fun saveWeight() {
         weights.removeAll {
-            it["date"].toString() == todayDate
+            it["date"].toString() == today
         }
 
         weights.add(
             mutableMapOf(
-                "date" to todayDate,
+                "date" to today,
                 "weight" to tempWeight
             )
         )
@@ -323,8 +418,10 @@ class MainActivity : Activity() {
             it["date"].toString()
         }
 
-        db.collection(docPathCollection)
-            .document(docPathDocument)
+        hapticComplete()
+
+        db.collection(collectionName)
+            .document(documentName)
             .set(
                 mapOf(
                     "weights" to weights,
@@ -336,108 +433,332 @@ class MainActivity : Activity() {
                 statusText.text = "Weight saved"
             }
             .addOnFailureListener {
-                statusText.text = "Weight failed"
+                statusText.text = "Weight offline"
             }
     }
 
-    private fun saveCoreData() {
-        db.collection(docPathCollection)
-            .document(docPathDocument)
-            .set(
-                mapOf(
-                    "missionsByDate" to missionsByDate,
-                    "updatedAt" to System.currentTimeMillis()
-                ),
-                SetOptions.merge()
-            )
+    private fun adjustWeight(delta: Double) {
+        tempWeight = roundOne(tempWeight + delta)
+        hapticTiny()
+        renderAll()
     }
 
-    private fun makeMissionCircle(text: String, done: Boolean): TextView {
-        val view = TextView(this)
+    private fun updateDayResult() {
+        val missions = todayMissions()
+        val doneMap = todayCompletions()
 
-        val size = dp(185)
-        val params = LinearLayout.LayoutParams(size, size)
-        params.setMargins(0, dp(12), 0, dp(12))
-        view.layoutParams = params
+        val missed = missions.filter {
+            !(doneMap[it] as? Boolean ?: false)
+        }
 
-        view.text = if (done) "✓\n$text" else "✕\n$text"
-        view.gravity = Gravity.CENTER
-        view.textSize = 14f
-        view.typeface = Typeface.DEFAULT_BOLD
-        view.setTextColor(Color.WHITE)
-        view.setPadding(dp(18), dp(18), dp(18), dp(18))
+        val complete = missions.size - missed.size
+        val pct = if (missions.isEmpty()) {
+            0
+        } else {
+            ((complete.toDouble() / missions.size) * 100).roundToInt()
+        }
 
-        val bg = GradientDrawable()
-        bg.shape = GradientDrawable.OVAL
-        bg.setColor(
-            if (done) Color.parseColor("#15803d")
-            else Color.parseColor("#991b1b")
+        dayResults[today] = mapOf(
+            "status" to if (pct == 100) "green" else "partial",
+            "missed" to missed,
+            "complete" to complete,
+            "total" to missions.size,
+            "pct" to pct
         )
-        bg.setStroke(dp(3), Color.parseColor("#f5c451"))
-
-        view.background = bg
-
-        return view
     }
 
-    private fun makeSmallButton(text: String): TextView {
-        val button = TextView(this)
-        val params = LinearLayout.LayoutParams(dp(76), dp(46))
+    private fun todayMissions(): List<String> {
+        val raw = missionsByDate[today]
+
+        val missions = when (raw) {
+            is List<*> -> raw.mapNotNull {
+                it?.toString()
+            }
+            else -> emptyList()
+        }
+
+        return if (missions.isEmpty()) {
+            defaultMissions
+        } else {
+            missions
+        }
+    }
+
+    private fun todayCompletions(): MutableMap<String, Any> {
+        val raw = completions[today]
+
+        return when (raw) {
+            is Map<*, *> -> raw.entries.associate {
+                it.key.toString() to (it.value as? Boolean ?: false)
+            }.toMutableMap()
+            else -> mutableMapOf()
+        }
+    }
+
+    private fun missionStats(): MissionStats {
+        val missions = todayMissions()
+        val done = todayCompletions()
+
+        val complete = missions.count {
+            done[it] as? Boolean ?: false
+        }
+
+        val pct = if (missions.isEmpty()) {
+            0
+        } else {
+            ((complete.toDouble() / missions.size) * 100).roundToInt()
+        }
+
+        return MissionStats(complete, missions.size, pct)
+    }
+
+    private fun currentStreak(): Int {
+        var streak = 0
+
+        for (i in 0 until 365) {
+            val key = addDays(today, -i)
+
+            val missions = when (val raw = missionsByDate[key]) {
+                is List<*> -> raw.mapNotNull {
+                    it?.toString()
+                }
+                else -> defaultMissions
+            }
+
+            val done = when (val raw = completions[key]) {
+                is Map<*, *> -> raw.entries.associate {
+                    it.key.toString() to (it.value as? Boolean ?: false)
+                }
+                else -> emptyMap()
+            }
+
+            if (missions.isNotEmpty() && missions.all { done[it] == true }) {
+                streak++
+            } else {
+                break
+            }
+        }
+
+        return streak
+    }
+
+    private fun loadLatestWeight() {
+        if (weights.isEmpty()) {
+            tempWeight = 98.7
+            return
+        }
+
+        val latest = weights.maxByOrNull {
+            it["date"].toString()
+        }
+
+        tempWeight = when (val value = latest?.get("weight")) {
+            is Number -> value.toDouble()
+            is String -> value.toDoubleOrNull() ?: 98.7
+            else -> 98.7
+        }
+
+        tempWeight = roundOne(tempWeight)
+    }
+
+    private fun shortMission(mission: String): String {
+        return mission
+            .replace("Drink three glasses of water", "Drink three glasses\nof water")
+            .replace("Read the Bible and say a prayer", "Read Bible\nand pray")
+            .replace("Clean room by end of day", "Clean room")
+            .replace("10,000 steps", "10,000 steps")
+            .replace("Read 10 minutes", "Read 10 minutes")
+            .replace("Brush teeth", "Brush teeth")
+    }
+
+    private fun text(value: String, sp: Float, color: Int, bold: Boolean): TextView {
+        val t = TextView(this)
+        t.text = value
+        t.textSize = sp
+        t.setTextColor(color)
+
+        if (bold) {
+            t.typeface = Typeface.DEFAULT_BOLD
+        }
+
+        return t
+    }
+
+    private fun pillButton(label: String, bgColor: Int, textColor: Int): TextView {
+        val b = text(label, 14f, textColor, true)
+        b.gravity = Gravity.CENTER
+        b.background = roundedFill(bgColor, 24f)
+        return b
+    }
+
+    private fun weightButton(label: String, click: () -> Unit): TextView {
+        val b = pillButton(label, DARK_CARD, WHITE)
+        b.setOnClickListener {
+            click()
+        }
+
+        val params = LinearLayout.LayoutParams(dp(76), dp(44))
         params.setMargins(dp(4), 0, dp(4), 0)
-        button.layoutParams = params
+        b.layoutParams = params
 
-        button.text = text
-        button.gravity = Gravity.CENTER
-        button.textSize = 16f
-        button.typeface = Typeface.DEFAULT_BOLD
-        button.setTextColor(Color.parseColor("#111827"))
+        return b
+    }
 
+    private fun roundedCard(fill: String, stroke: Int, radius: Float): GradientDrawable {
         val bg = GradientDrawable()
-        bg.cornerRadius = dp(22).toFloat()
-        bg.setColor(Color.parseColor("#f5c451"))
-        button.background = bg
-
-        return button
+        bg.cornerRadius = dp(radius.toInt()).toFloat()
+        bg.setColor(Color.parseColor(fill))
+        bg.setStroke(dp(2), stroke)
+        return bg
     }
 
-    private fun makeWideButton(text: String): TextView {
-        val button = TextView(this)
-        val params = LinearLayout.LayoutParams(dp(180), dp(48))
-        params.setMargins(0, dp(4), 0, dp(12))
-        button.layoutParams = params
-
-        button.text = text
-        button.gravity = Gravity.CENTER
-        button.textSize = 13f
-        button.typeface = Typeface.DEFAULT_BOLD
-        button.setTextColor(Color.parseColor("#111827"))
-
+    private fun roundedFill(fill: Int, radius: Float): GradientDrawable {
         val bg = GradientDrawable()
-        bg.cornerRadius = dp(24).toFloat()
-        bg.setColor(Color.parseColor("#f5c451"))
-        button.background = bg
-
-        return button
+        bg.cornerRadius = dp(radius.toInt()).toFloat()
+        bg.setColor(fill)
+        return bg
     }
 
-    private fun updateWeightText() {
-        weightText.text = String.format(Locale.US, "%.1f kg", tempWeight)
+    private fun progressColor(percent: Int): Int {
+        return when {
+            percent >= 80 -> GREEN
+            percent >= 40 -> GOLD
+            else -> RED
+        }
     }
 
-    private fun roundOne(value: Double): Double {
-        return String.format(Locale.US, "%.1f", value).toDouble()
+    private fun hapticTiny() = vibrate(12)
+    private fun hapticComplete() = vibrate(30)
+    private fun hapticUndo() = vibrate(18)
+    private fun hapticStrong() = vibrate(75)
+
+    private fun vibrate(ms: Long) {
+        try {
+            val vibrator = if (android.os.Build.VERSION.SDK_INT >= 31) {
+                val manager = getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                manager.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                getSystemService(VIBRATOR_SERVICE) as Vibrator
+            }
+
+            if (android.os.Build.VERSION.SDK_INT >= 26) {
+                vibrator.vibrate(
+                    VibrationEffect.createOneShot(
+                        ms,
+                        VibrationEffect.DEFAULT_AMPLITUDE
+                    )
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(ms)
+            }
+        } catch (_: Exception) {
+        }
     }
 
-    private fun dp(value: Int): Int {
-        return (value * resources.displayMetrics.density).toInt()
+    private fun matchWrap(top: Int = 0, bottom: Int = 0): LinearLayout.LayoutParams {
+        val p = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        p.setMargins(0, dp(top), 0, dp(bottom))
+        return p
+    }
+
+    private fun fixedWrap(w: Int, h: Int, top: Int = 0, bottom: Int = 0): LinearLayout.LayoutParams {
+        val p = LinearLayout.LayoutParams(dp(w), dp(h))
+        p.setMargins(0, dp(top), 0, dp(bottom))
+        return p
+    }
+
+    private fun dp(v: Int): Int {
+        return (v * resources.displayMetrics.density).toInt()
+    }
+
+    private fun roundOne(v: Double): Double {
+        return String.format(Locale.US, "%.1f", v).toDouble()
     }
 
     private fun todayKey(): String {
         val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        formatter.timeZone = TimeZone.getTimeZone("UTC")
+        return formatter.format(Date())
+    }
 
-        // This matches your website's current JS date style using toISOString().
+    private fun addDays(dateKey: String, days: Int): String {
+        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
         formatter.timeZone = TimeZone.getTimeZone("UTC")
 
-        return formatter.format(Date())
+        val date = formatter.parse(dateKey) ?: Date()
+        val cal = java.util.Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+        cal.time = date
+        cal.add(java.util.Calendar.DATE, days)
+
+        return formatter.format(cal.time)
+    }
+
+    data class MissionStats(
+        val done: Int,
+        val total: Int,
+        val percent: Int
+    )
+
+    companion object {
+        val BLACK = Color.parseColor("#000000")
+        val DARK_CARD = Color.parseColor("#101418")
+        val WHITE = Color.parseColor("#f8fafc")
+        val MUTED = Color.parseColor("#94a3b8")
+        val GOLD = Color.parseColor("#f5c451")
+        val GREEN = Color.parseColor("#22c55e")
+        val RED = Color.parseColor("#ef4444")
+        val CYAN = Color.parseColor("#38bdf8")
+    }
+}
+
+class ProgressRingView(context: android.content.Context) : View(context) {
+    var progress: Int = 0
+    var ringColor: Int = Color.parseColor("#f5c451")
+
+    private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+
+    override fun onDraw(canvas: android.graphics.Canvas) {
+        super.onDraw(canvas)
+
+        val stroke = width * 0.10f
+        val pad = stroke / 2f + 2f
+        val rect = android.graphics.RectF(
+            pad,
+            pad,
+            width - pad,
+            height - pad
+        )
+
+        paint.style = android.graphics.Paint.Style.STROKE
+        paint.strokeWidth = stroke
+        paint.strokeCap = android.graphics.Paint.Cap.ROUND
+        paint.color = Color.parseColor("#1f2937")
+        canvas.drawArc(rect, -90f, 360f, false, paint)
+
+        paint.color = ringColor
+        canvas.drawArc(
+            rect,
+            -90f,
+            progress.coerceIn(0, 100) * 3.6f,
+            false,
+            paint
+        )
+
+        paint.style = android.graphics.Paint.Style.FILL
+        paint.textAlign = android.graphics.Paint.Align.CENTER
+        paint.typeface = Typeface.DEFAULT_BOLD
+        paint.textSize = width * 0.23f
+        paint.color = Color.parseColor("#f8fafc")
+        canvas.drawText(
+            "$progress%",
+            width / 2f,
+            height / 2f + paint.textSize / 3f,
+            paint
+        )
     }
 }
