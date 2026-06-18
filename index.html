@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Da Thadiya</title>
+<meta name="theme-color" content="#070b14">
+<style>
+:root{
+  --bg:#070b14; --card:#111827; --card2:#182235; --gold:#f5c451;
+  --green:#22c55e; --red:#ef4444; --text:#f8fafc; --muted:#94a3b8;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; font-family:Inter,Arial,sans-serif; color:var(--text);
+  background:radial-gradient(circle at top,#1e293b,#020617 60%);
+}
+header{padding:26px 18px;text-align:center}
+h1{margin:0;font-size:34px;color:var(--gold);letter-spacing:1px}
+.header-motivation{color:#f8fafc;margin-top:10px;font-size:17px}
+.header-motivation b{color:var(--gold)}
+.sync-status{font-size:12px;color:var(--muted);margin-top:8px}
+.tabs{display:flex;gap:10px;justify-content:center;margin:10px}
+button{
+  border:0;border-radius:12px;padding:10px 14px;font-weight:700;
+  background:var(--card2);color:var(--text);cursor:pointer;
+}
+button.active,.gold{background:var(--gold);color:#111827}
+.wrap{max-width:1050px;margin:auto;padding:14px}
+.card{
+  background:rgba(17,24,39,.9);border:1px solid rgba(245,196,81,.25);
+  border-radius:20px;padding:18px;margin-bottom:18px;box-shadow:0 12px 35px #0008;
+}
+.motivation{font-size:18px;color:#fff;margin-bottom:16px}
+.motivation b{color:var(--gold)}
+.tab{display:none}.tab.active{display:block}
+.cal-head{display:flex;justify-content:space-between;align-items:center}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:14px}
+.day,.dow{
+  min-height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  background:#0f172a;border:1px solid #263244;
+}
+.dow{min-height:30px;color:var(--gold);font-weight:800}
+.day{cursor:pointer;position:relative}
+.day.empty{background:transparent;border:0;cursor:default}
+.day.green{background:rgba(34,197,94,.35);border-color:var(--green)}
+.day.red{background:rgba(239,68,68,.35);border-color:var(--red)}
+.today{outline:2px solid var(--gold)}
+.selected{box-shadow:0 0 0 3px #fff inset}
+table{width:100%;border-collapse:collapse;margin-top:12px}
+th,td{padding:11px;border-bottom:1px solid #334155;text-align:left;vertical-align:middle}
+input,select{
+  width:100%;padding:10px;border-radius:10px;border:1px solid #334155;
+  background:#020617;color:var(--text);
+}
+.row{display:grid;grid-template-columns:1fr 150px;gap:10px;margin-top:12px}
+.small{font-size:13px;color:var(--muted)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+canvas{
+  width:100%;height:420px;background:#020617;border-radius:16px;
+  border:1px solid #334155;
+}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+.stat{background:#020617;border-radius:14px;padding:12px;flex:1;min-width:170px}
+.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.badge{
+  background:#020617;border:1px solid #334155;border-radius:999px;
+  padding:8px 12px;color:var(--gold);font-weight:700;
+}
+@media(max-width:650px){
+  .row{grid-template-columns:1fr}
+  .day{min-height:45px;font-size:13px}
+  th,td{font-size:13px;padding:8px}
+  h1{font-size:28px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>DA THADIYA</h1>
+  <div class="header-motivation" id="headerMotivation"></div>
+  <div class="sync-status" id="syncStatus">Sync: local only until Firebase is configured</div>
+</header>
+
+<div class="tabs">
+  <button class="tabBtn active" onclick="showTab('missions', this)">Mission Calendar</button>
+  <button class="tabBtn" onclick="showTab('weight', this)">Weight Tracker</button>
+</div>
+
+<div class="wrap">
+  <section id="missions" class="tab active">
+    <div class="card">
+      <div class="cal-head">
+        <button onclick="changeMonth(-1)">←</button>
+        <h2 id="monthTitle"></h2>
+        <button onclick="changeMonth(1)">→</button>
+      </div>
+
+      <div class="calendar" id="calendar"></div>
+      <p class="small">
+        Click any date to view or update that day’s missions. This lets you go back and complete a mission if you forgot to update it.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="section-title">
+        <h2>Missions for Selected Day</h2>
+        <div class="badge" id="selectedDateBadge"></div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Mission</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="missionTable"></tbody>
+      </table>
+
+      <div class="row">
+        <input id="newMission" placeholder="Add mission for selected day..." />
+        <button class="gold" onclick="addMissionForSelectedDay()">Add Mission</button>
+      </div>
+
+      <p class="small">
+        A day turns green when every mission for that date is complete. It turns red when at least one is missed.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Tomorrow’s Missions</h2>
+      <p class="small">Add anything you remember for tomorrow. It will appear on tomorrow’s mission list.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Tomorrow Mission</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="tomorrowMissionTable"></tbody>
+      </table>
+
+      <div class="row">
+        <input id="tomorrowMissionInput" placeholder="Example: Call gym, meal prep, buy groceries..." />
+        <button class="gold" onclick="addTomorrowMission()">Add for Tomorrow</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="weight" class="tab">
+    <div class="card">
+      <div class="motivation" id="motivation2"></div>
+      <canvas id="weightChart" width="1100" height="520"></canvas>
+
+      <div class="stats">
+        <div class="stat">Current Weight: <b id="currentWeightText"></b> kg</div>
+        <div class="stat">Target Weight: <b id="targetWeightText"></b> kg</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Update Weight</h2>
+      <div class="row">
+        <input type="date" id="weightDate" />
+        <input type="number" step="0.1" id="weightValue" placeholder="Weight in kg" />
+      </div>
+      <button class="gold" style="margin-top:12px" onclick="addWeight()">Save Weight</button>
+
+      <h2 style="margin-top:24px">Edit Target</h2>
+      <div class="row">
+        <input type="number" step="0.1" id="targetWeightInput" />
+        <button onclick="saveTarget()">Save Target</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+<script>
+/*
+  FIREBASE SETUP:
+  Replace the placeholder values below with your Firebase Web App config.
+*/
+const firebaseConfig = {
+  apiKey: "PASTE_YOUR_FIREBASE_API_KEY_HERE",
+  authDomain: "PASTE_YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "PASTE_YOUR_PROJECT_ID",
+  storageBucket: "PASTE_YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "PASTE_YOUR_MESSAGING_SENDER_ID",
+  appId: "PASTE_YOUR_APP_ID"
+};
+
+const proposalDate = new Date("2026-10-10T19:00:00");
+
+const defaultMissions = [
+  "10,000 steps",
+  "Drink three glasses of water",
+  "Read 10 minutes",
+  "Clean room by end of day",
+  "Read the Bible and say a prayer",
+  "Brush teeth"
+];
+
+let currentMonth = new Date();
+let selectedDate = todayKey();
+
+let missionsByDate = JSON.parse(localStorage.getItem("missionsByDate")) || {};
+let completions = JSON.parse(localStorage.getItem("completions")) || {};
+let dayResults = JSON.parse(localStorage.getItem("dayResults")) || {};
+let weights = JSON.parse(localStorage.getItem("weights")) || [
+  {date: "2026-06-13", weight: 98.7}
+];
+let targetWeight = Number(localStorage.getItem("targetWeight")) || 91;
+
+let db = null;
+let syncEnabled = false;
+let applyingCloudUpdate = false;
+let syncTimer = null;
+
+function todayKey(){ return new Date().toISOString().slice(0,10); }
+
+function getDateKey(y,m,d){
+  return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+}
+
+function addDays(dateKey, days){
+  const d = new Date(dateKey + "T12:00:00");
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0,10);
+}
+
+function localSave(){
+  localStorage.setItem("missionsByDate", JSON.stringify(missionsByDate));
+  localStorage.setItem("completions", JSON.stringify(completions));
+  localStorage.setItem("dayResults", JSON.stringify(dayResults));
+  localStorage.setItem("weights", JSON.stringify(weights));
+  localStorage.setItem("targetWeight", targetWeight);
+}
+
+function save(){
+  localSave();
+  syncToCloud();
+}
+
+function appState(){
+  return {
+    missionsByDate,
+    completions,
+    dayResults,
+    weights,
+    targetWeight,
+    updatedAt: Date.now()
+  };
+}
+
+function applyState(data){
+  if(!data) return;
+
+  missionsByDate = data.missionsByDate || missionsByDate;
+  completions = data.completions || completions;
+  dayResults = data.dayResults || dayResults;
+  weights = data.weights || weights;
+  targetWeight = data.targetWeight || targetWeight;
+
+  localSave();
+  renderCalendar();
+  renderMissions();
+  renderTomorrowMissions();
+  drawChart();
+}
+
+function initSync(){
+  const notConfigured = firebaseConfig.apiKey.includes("PASTE_");
+
+  if(notConfigured){
+    document.getElementById("syncStatus").textContent =
+      "Sync: local only. Add Firebase config to sync laptop and Android.";
+    return;
+  }
+
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    syncEnabled = true;
+
+    const ref = db.collection("daThadiyaUsers").doc("joel");
+
+    ref.get().then(snapshot => {
+      if(snapshot.exists){
+        applyState(snapshot.data());
+      } else {
+        ref.set(appState(), {merge:true});
+      }
+      document.getElementById("syncStatus").textContent = "Sync: connected";
+    });
+
+    ref.onSnapshot(snapshot => {
+      if(!snapshot.exists) return;
+
+      applyingCloudUpdate = true;
+      applyState(snapshot.data());
+      applyingCloudUpdate = false;
+
+      document.getElementById("syncStatus").textContent = "Sync: connected";
+    }, () => {
+      document.getElementById("syncStatus").textContent = "Sync: offline, using local backup";
+    });
+
+  } catch(e){
+    document.getElementById("syncStatus").textContent = "Sync: Firebase error, using local backup";
+  }
+}
+
+function syncToCloud(){
+  if(!syncEnabled || !db || applyingCloudUpdate) return;
+
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    db.collection("daThadiyaUsers").doc("joel").set(appState(), {merge:true})
+      .then(() => document.getElementById("syncStatus").textContent = "Sync: saved")
+      .catch(() => document.getElementById("syncStatus").textContent = "Sync: offline, using local backup");
+  }, 500);
+}
+
+function getMissionsForDate(dateKey){
+  if(!missionsByDate[dateKey]){
+    missionsByDate[dateKey] = [...defaultMissions];
+    localSave();
+  }
+
+  for(const mission of defaultMissions){
+    if(!missionsByDate[dateKey].includes(mission)){
+      missionsByDate[dateKey].push(mission);
+    }
+  }
+
+  return missionsByDate[dateKey];
+}
+
+function motivation(){
+  const now = new Date();
+  const diff = proposalDate - now;
+  const days = Math.max(0, Math.floor(diff / 86400000));
+  const hours = Math.max(0, Math.floor((diff % 86400000) / 3600000));
+
+  const msg = `Da Thadiya, welcome back! It is <b>${days} days and ${hours} hours</b> left to proposal. Work hard, you are getting close.`;
+
+  document.getElementById("headerMotivation").innerHTML = msg;
+  document.getElementById("motivation2").innerHTML = msg;
+}
+
+function showTab(id, btn){
+  document.querySelectorAll(".tab,.tabBtn").forEach(x=>x.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  btn.classList.add("active");
+  if(id==="weight") drawChart();
+}
+
+function evaluateDay(dateKey){
+  const missions = getMissionsForDate(dateKey);
+  const done = completions[dateKey] || {};
+  const missed = missions.filter(m => !done[m]);
+
+  dayResults[dateKey] = {
+    status: missed.length === 0 ? "green" : "red",
+    missed
+  };
+
+  save();
+}
+
+function autoCheckPastDays(){
+  const yKey = addDays(todayKey(), -1);
+  if(!dayResults[yKey]) evaluateDay(yKey);
+}
+
+function renderCalendar(){
+  const cal = document.getElementById("calendar");
+  cal.innerHTML = "";
+
+  const y = currentMonth.getFullYear();
+  const m = currentMonth.getMonth();
+
+  document.getElementById("monthTitle").textContent =
+    currentMonth.toLocaleString("default",{month:"long",year:"numeric"});
+
+  ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(d=>{
+    const el=document.createElement("div");
+    el.className="dow";
+    el.textContent=d;
+    cal.appendChild(el);
+  });
+
+  const first = new Date(y,m,1).getDay();
+  const days = new Date(y,m+1,0).getDate();
+
+  for(let i=0;i<first;i++){
+    const e=document.createElement("div");
+    e.className="day empty";
+    cal.appendChild(e);
+  }
+
+  for(let d=1; d<=days; d++){
+    const key = getDateKey(y,m,d);
+    const el = document.createElement("div");
+    el.className = "day";
+
+    if(key === todayKey()) el.classList.add("today");
+    if(key === selectedDate) el.classList.add("selected");
+    if(dayResults[key]) el.classList.add(dayResults[key].status);
+
+    el.textContent = d;
+    el.onclick = () => selectDate(key);
+    cal.appendChild(el);
+  }
+}
+
+function selectDate(key){
+  selectedDate = key;
+  getMissionsForDate(selectedDate);
+  renderCalendar();
+  renderMissions();
+}
+
+function changeMonth(n){
+  currentMonth.setMonth(currentMonth.getMonth()+n);
+  renderCalendar();
+}
+
+function renderMissions(){
+  const tbody = document.getElementById("missionTable");
+  tbody.innerHTML = "";
+
+  document.getElementById("selectedDateBadge").textContent = selectedDate;
+
+  const missions = getMissionsForDate(selectedDate);
+  completions[selectedDate] = completions[selectedDate] || {};
+
+  missions.forEach((mission, i)=>{
+    const tr=document.createElement("tr");
+    const done = !!completions[selectedDate][mission];
+
+    tr.innerHTML = `
+      <td><input value="${escapeHTML(mission)}" onchange="editMission(${i}, this.value)" /></td>
+      <td>${done ? "✅ Complete" : "❌ Not Complete"}</td>
+      <td class="actions">
+        <button onclick="toggleMission(${i})">${done ? "Undo" : "Complete"}</button>
+        <button onclick="removeMission(${i})">Remove</button>
+      </td>`;
+
+    tbody.appendChild(tr);
+  });
+}
+
+function toggleMission(index){
+  const missions = getMissionsForDate(selectedDate);
+  const mission = missions[index];
+
+  completions[selectedDate] = completions[selectedDate] || {};
+  completions[selectedDate][mission] = !completions[selectedDate][mission];
+
+  evaluateDay(selectedDate);
+  renderMissions();
+  renderCalendar();
+}
+
+function addMissionForSelectedDay(){
+  const val = document.getElementById("newMission").value.trim();
+  if(!val) return;
+
+  getMissionsForDate(selectedDate).push(val);
+  document.getElementById("newMission").value = "";
+
+  evaluateDay(selectedDate);
+  save();
+  renderMissions();
+  renderCalendar();
+}
+
+function editMission(i, val){
+  const missions = getMissionsForDate(selectedDate);
+  const old = missions[i];
+  const updated = val.trim() || old;
+
+  missions[i] = updated;
+
+  if(completions[selectedDate]?.[old]){
+    completions[selectedDate][updated] = completions[selectedDate][old];
+    delete completions[selectedDate][old];
+  }
+
+  evaluateDay(selectedDate);
+  save();
+  renderMissions();
+  renderCalendar();
+}
+
+function removeMission(i){
+  if(confirm("Remove this mission from this selected day?")){
+    const missions = getMissionsForDate(selectedDate);
+    const removed = missions.splice(i,1)[0];
+
+    if(completions[selectedDate]) delete completions[selectedDate][removed];
+
+    evaluateDay(selectedDate);
+    save();
+    renderMissions();
+    renderCalendar();
+  }
+}
+
+function renderTomorrowMissions(){
+  const tbody = document.getElementById("tomorrowMissionTable");
+  tbody.innerHTML = "";
+
+  const tomorrow = addDays(todayKey(), 1);
+  const missions = getMissionsForDate(tomorrow);
+
+  missions.forEach((mission, i)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHTML(mission)}</td>
+      <td><button onclick="removeTomorrowMission(${i})">Remove</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function addTomorrowMission(){
+  const input = document.getElementById("tomorrowMissionInput");
+  const val = input.value.trim();
+  if(!val) return;
+
+  const tomorrow = addDays(todayKey(), 1);
+  getMissionsForDate(tomorrow).push(val);
+
+  input.value = "";
+  save();
+  renderTomorrowMissions();
+}
+
+function removeTomorrowMission(i){
+  const tomorrow = addDays(todayKey(), 1);
+  const missions = getMissionsForDate(tomorrow);
+  missions.splice(i,1);
+
+  save();
+  renderTomorrowMissions();
+
+  if(selectedDate === tomorrow){
+    renderMissions();
+    renderCalendar();
+  }
+}
+
+function addWeight(){
+  const date = document.getElementById("weightDate").value;
+  const weight = Number(document.getElementById("weightValue").value);
+
+  if(!date || !weight) return alert("Enter date and weight.");
+
+  if(weight < 85 || weight > 105){
+    alert("Weight should be between 85 kg and 105 kg for this graph.");
+    return;
+  }
+
+  weights = weights.filter(w => w.date !== date);
+  weights.push({date, weight});
+  weights.sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+  save();
+  drawChart();
+}
+
+function saveTarget(){
+  const newTarget = Number(document.getElementById("targetWeightInput").value);
+
+  if(newTarget < 85 || newTarget > 105){
+    alert("Target weight should be between 85 kg and 105 kg for this graph.");
+    return;
+  }
+
+  targetWeight = newTarget;
+  save();
+  drawChart();
+}
+
+function drawChart(){
+  const canvas=document.getElementById("weightChart");
+  const ctx=canvas.getContext("2d");
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  weights.sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+  const latest = weights[weights.length-1];
+  const start = new Date(weights[0].date + "T00:00:00");
+  const end = proposalDate;
+
+  const padL=80, padR=40, padT=35, padB=75;
+  const chartW=canvas.width-padL-padR;
+  const chartH=canvas.height-padT-padB;
+
+  const minW = 85;
+  const maxW = 105;
+
+  const x = date => padL + ((new Date(date)-start)/(end-start))*chartW;
+  const y = kg => padT + ((maxW-kg)/(maxW-minW))*chartH;
+
+  ctx.fillStyle="#020617";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  drawGraphPaper(ctx, padL, padT, chartW, chartH, minW, maxW, start, end, x, y);
+  drawAxes(ctx, padL, padT, chartW, chartH, minW, maxW, start, end, x, y);
+
+  ctx.strokeStyle="#ef4444";
+  ctx.lineWidth=3;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(padL, y(targetWeight));
+  ctx.lineTo(padL+chartW, y(targetWeight));
+  ctx.stroke();
+
+  ctx.fillStyle="#ef4444";
+  ctx.font="15px Arial";
+  ctx.fillText(`Target: ${targetWeight} kg`, padL+10, y(targetWeight)-10);
+
+  ctx.strokeStyle="#f5c451";
+  ctx.lineWidth=3;
+  ctx.beginPath();
+
+  weights.forEach((pt,i)=>{
+    if(i===0) ctx.moveTo(x(pt.date), y(pt.weight));
+    else ctx.lineTo(x(pt.date), y(pt.weight));
+  });
+
+  ctx.stroke();
+
+  weights.forEach(pt=>{
+    ctx.fillStyle="#f5c451";
+    ctx.beginPath();
+    ctx.arc(x(pt.date), y(pt.weight), 6, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle="#f8fafc";
+    ctx.font="12px Arial";
+    ctx.fillText(`${pt.weight}`, x(pt.date)+8, y(pt.weight)-8);
+  });
+
+  ctx.strokeStyle="#ffffff";
+  ctx.setLineDash([8,8]);
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(x(latest.date), y(latest.weight));
+  ctx.lineTo(x(proposalDate), y(targetWeight));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle="#f8fafc";
+  ctx.font="bold 17px Arial";
+  ctx.fillText("Weight Loss Mission Graph", padL, 24);
+
+  document.getElementById("currentWeightText").textContent = latest.weight;
+  document.getElementById("targetWeightText").textContent = targetWeight;
+  document.getElementById("targetWeightInput").value = targetWeight;
+}
+
+function drawGraphPaper(ctx, padL, padT, chartW, chartH, minW, maxW, start, end, x, y){
+  ctx.lineWidth=1;
+
+  for(let kg=minW; kg<=maxW; kg+=1){
+    ctx.strokeStyle = kg % 5 === 0 ? "rgba(148,163,184,.26)" : "rgba(148,163,184,.11)";
+    ctx.beginPath();
+    ctx.moveTo(padL, y(kg));
+    ctx.lineTo(padL+chartW, y(kg));
+    ctx.stroke();
+  }
+
+  const d = new Date(start);
+  d.setDate(1);
+
+  while(d <= end){
+    const isMonth = d.getDate() === 1;
+    ctx.strokeStyle = isMonth ? "rgba(245,196,81,.36)" : "rgba(148,163,184,.10)";
+    ctx.lineWidth = isMonth ? 2 : 1;
+
+    ctx.beginPath();
+    ctx.moveTo(x(d), padT);
+    ctx.lineTo(x(d), padT+chartH);
+    ctx.stroke();
+
+    d.setDate(d.getDate()+7);
+  }
+}
+
+function drawAxes(ctx, padL, padT, chartW, chartH, minW, maxW, start, end, x, y){
+  ctx.strokeStyle="#f8fafc";
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT);
+  ctx.lineTo(padL, padT+chartH);
+  ctx.lineTo(padL+chartW, padT+chartH);
+  ctx.stroke();
+
+  ctx.fillStyle="#f8fafc";
+  ctx.font="14px Arial";
+
+  ctx.save();
+  ctx.translate(24, padT + chartH/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText("Weight in kg", 0, 0);
+  ctx.restore();
+
+  ctx.fillText("Months leading to proposal", padL + chartW/2 - 80, padT + chartH + 58);
+
+  for(let kg=minW; kg<=maxW; kg+=5){
+    ctx.fillStyle="#94a3b8";
+    ctx.fillText(`${kg}`, padL-42, y(kg)+4);
+  }
+
+  const month = new Date(start);
+  month.setDate(1);
+
+  while(month <= end){
+    ctx.fillStyle="#94a3b8";
+    ctx.font="13px Arial";
+    const label = month.toLocaleString("default", {month:"short"});
+    ctx.fillText(label, x(month)-12, padT+chartH+25);
+    month.setMonth(month.getMonth()+1);
+  }
+}
+
+function escapeHTML(str){
+  return String(str)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+document.getElementById("weightDate").value = todayKey();
+
+autoCheckPastDays();
+getMissionsForDate(todayKey());
+motivation();
+renderCalendar();
+renderMissions();
+renderTomorrowMissions();
+drawChart();
+initSync();
+
+setInterval(motivation, 60000);
+</script>
+
+</body>
+</html>
