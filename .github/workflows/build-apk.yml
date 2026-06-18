@@ -1,4 +1,4 @@
-name: Build WeightLoss APK
+name: Build WeightLoss APKs
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
       - main
 
 jobs:
-  build-apk:
+  build-apks:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,14 +20,26 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Gradle
+      - name: Set up Gradle 8.7
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+          cache-cleanup: always
 
-      - name: Build APK
-        run: gradle assembleDebug
+      - name: Build phone APK
+        run: gradle :app:assembleDebug --stacktrace
 
-      - name: Upload APK
+      - name: Build watch APK
+        run: gradle :wear:assembleDebug --stacktrace
+
+      - name: Upload phone APK
         uses: actions/upload-artifact@v4
         with:
-          name: WeightLoss-debug-apk
+          name: WeightLoss-phone-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload watch APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: WeightLoss-watch-debug-apk
+          path: wear/build/outputs/apk/debug/wear-debug.apk
