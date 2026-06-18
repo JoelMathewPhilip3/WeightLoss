@@ -216,7 +216,7 @@ class MainActivity : Activity() {
 
     private fun renderSummary() {
         summaryCard.removeAllViews()
-        summaryCard.background = roundedCard(DARK_CARD, GOLD, 18f)
+        summaryCard.background = roundedCard("#101418", GOLD, 18f)
 
         val stats = missionStats()
         val streak = currentStreak()
