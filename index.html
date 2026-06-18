@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Da Thadiya</title>
+<meta name="theme-color" content="#070b14">
 <style>
 :root{
   --bg:#070b14; --card:#111827; --card2:#182235; --gold:#f5c451;
@@ -18,6 +19,7 @@ header{padding:26px 18px;text-align:center}
 h1{margin:0;font-size:34px;color:var(--gold);letter-spacing:1px}
 .header-motivation{color:#f8fafc;margin-top:10px;font-size:17px}
 .header-motivation b{color:var(--gold)}
+.sync-status{font-size:12px;color:var(--muted);margin-top:8px}
 .tabs{display:flex;gap:10px;justify-content:center;margin:10px}
 button{
   border:0;border-radius:12px;padding:10px 14px;font-weight:700;
@@ -52,7 +54,6 @@ input,select{
   background:#020617;color:var(--text);
 }
 .row{display:grid;grid-template-columns:1fr 150px;gap:10px;margin-top:12px}
-.two-row{display:grid;grid-template-columns:1fr 1fr 160px;gap:10px;margin-top:12px}
 .small{font-size:13px;color:var(--muted)}
 .actions{display:flex;gap:8px;flex-wrap:wrap}
 canvas{
@@ -67,7 +68,7 @@ canvas{
   padding:8px 12px;color:var(--gold);font-weight:700;
 }
 @media(max-width:650px){
-  .row,.two-row{grid-template-columns:1fr}
+  .row{grid-template-columns:1fr}
   .day{min-height:45px;font-size:13px}
   th,td{font-size:13px;padding:8px}
   h1{font-size:28px}
@@ -79,6 +80,7 @@ canvas{
 <header>
   <h1>DA THADIYA</h1>
   <div class="header-motivation" id="headerMotivation"></div>
+  <div class="sync-status" id="syncStatus">Sync: local only until Firebase is configured</div>
 </header>
 
 <div class="tabs">
@@ -89,8 +91,6 @@ canvas{
 <div class="wrap">
   <section id="missions" class="tab active">
     <div class="card">
-      <div class="motivation" id="motivation1"></div>
-
       <div class="cal-head">
         <button onclick="changeMonth(-1)">←</button>
         <h2 id="monthTitle"></h2>
@@ -179,7 +179,19 @@ canvas{
   </section>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
 <script>
+const firebaseConfig = {
+  apiKey: "PASTE_YOUR_FIREBASE_API_KEY_HERE",
+  authDomain: "PASTE_YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "PASTE_YOUR_PROJECT_ID",
+  storageBucket: "PASTE_YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "PASTE_YOUR_MESSAGING_SENDER_ID",
+  appId: "PASTE_YOUR_APP_ID"
+};
+
 const proposalDate = new Date("2026-10-10T19:00:00");
 
 const defaultMissions = [
@@ -202,9 +214,12 @@ let weights = JSON.parse(localStorage.getItem("weights")) || [
 ];
 let targetWeight = Number(localStorage.getItem("targetWeight")) || 91;
 
-function todayKey(){
-  return new Date().toISOString().slice(0,10);
-}
+let db = null;
+let syncEnabled = false;
+let applyingCloudUpdate = false;
+let syncTimer = null;
+
+function todayKey(){ return new Date().toISOString().slice(0,10); }
 
 function getDateKey(y,m,d){
   return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
@@ -216,7 +231,7 @@ function addDays(dateKey, days){
   return d.toISOString().slice(0,10);
 }
 
-function save(){
+function localSave(){
   localStorage.setItem("missionsByDate", JSON.stringify(missionsByDate));
   localStorage.setItem("completions", JSON.stringify(completions));
   localStorage.setItem("dayResults", JSON.stringify(dayResults));
@@ -224,18 +239,92 @@ function save(){
   localStorage.setItem("targetWeight", targetWeight);
 }
 
+function save(){
+  localSave();
+  syncToCloud();
+}
+
+function appState(){
+  return {
+    missionsByDate,
+    completions,
+    dayResults,
+    weights,
+    targetWeight,
+    updatedAt: Date.now()
+  };
+}
+
+function applyState(data){
+  if(!data) return;
+  missionsByDate = data.missionsByDate || missionsByDate;
+  completions = data.completions || completions;
+  dayResults = data.dayResults || dayResults;
+  weights = data.weights || weights;
+  targetWeight = data.targetWeight || targetWeight;
+  localSave();
+  renderCalendar();
+  renderMissions();
+  renderTomorrowMissions();
+  drawChart();
+}
+
+function initSync(){
+  const notConfigured = firebaseConfig.apiKey.includes("PASTE_");
+  if(notConfigured){
+    document.getElementById("syncStatus").textContent = "Sync: local only. Add Firebase config to sync laptop and Android.";
+    return;
+  }
+
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    syncEnabled = true;
+
+    const ref = db.collection("daThadiyaUsers").doc("joel");
+
+    ref.get().then(snapshot => {
+      if(snapshot.exists){
+        applyState(snapshot.data());
+      } else {
+        ref.set(appState(), {merge:true});
+      }
+      document.getElementById("syncStatus").textContent = "Sync: connected";
+    });
+
+    ref.onSnapshot(snapshot => {
+      if(!snapshot.exists) return;
+      applyingCloudUpdate = true;
+      applyState(snapshot.data());
+      applyingCloudUpdate = false;
+      document.getElementById("syncStatus").textContent = "Sync: connected";
+    }, () => {
+      document.getElementById("syncStatus").textContent = "Sync: offline, using local backup";
+    });
+
+  } catch(e){
+    document.getElementById("syncStatus").textContent = "Sync: Firebase error, using local backup";
+  }
+}
+
+function syncToCloud(){
+  if(!syncEnabled || !db || applyingCloudUpdate) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    db.collection("daThadiyaUsers").doc("joel").set(appState(), {merge:true})
+      .then(() => document.getElementById("syncStatus").textContent = "Sync: saved")
+      .catch(() => document.getElementById("syncStatus").textContent = "Sync: offline, using local backup");
+  }, 500);
+}
+
 function getMissionsForDate(dateKey){
   if(!missionsByDate[dateKey]){
     missionsByDate[dateKey] = [...defaultMissions];
-    save();
+    localSave();
   }
-
   for(const mission of defaultMissions){
-    if(!missionsByDate[dateKey].includes(mission)){
-      missionsByDate[dateKey].push(mission);
-    }
+    if(!missionsByDate[dateKey].includes(mission)) missionsByDate[dateKey].push(mission);
   }
-
   return missionsByDate[dateKey];
 }
 
@@ -244,11 +333,8 @@ function motivation(){
   const diff = proposalDate - now;
   const days = Math.max(0, Math.floor(diff / 86400000));
   const hours = Math.max(0, Math.floor((diff % 86400000) / 3600000));
-
   const msg = `Da Thadiya, welcome back! It is <b>${days} days and ${hours} hours</b> left to proposal. Work hard, you are getting close.`;
-
   document.getElementById("headerMotivation").innerHTML = msg;
-  document.getElementById("motivation1").innerHTML = msg;
   document.getElementById("motivation2").innerHTML = msg;
 }
 
@@ -263,12 +349,7 @@ function evaluateDay(dateKey){
   const missions = getMissionsForDate(dateKey);
   const done = completions[dateKey] || {};
   const missed = missions.filter(m => !done[m]);
-
-  dayResults[dateKey] = {
-    status: missed.length === 0 ? "green" : "red",
-    missed
-  };
-
+  dayResults[dateKey] = { status: missed.length === 0 ? "green" : "red", missed };
   save();
 }
 
@@ -306,11 +387,9 @@ function renderCalendar(){
     const key = getDateKey(y,m,d);
     const el = document.createElement("div");
     el.className = "day";
-
     if(key === todayKey()) el.classList.add("today");
     if(key === selectedDate) el.classList.add("selected");
     if(dayResults[key]) el.classList.add(dayResults[key].status);
-
     el.textContent = d;
     el.onclick = () => selectDate(key);
     cal.appendChild(el);
@@ -332,16 +411,13 @@ function changeMonth(n){
 function renderMissions(){
   const tbody = document.getElementById("missionTable");
   tbody.innerHTML = "";
-
   document.getElementById("selectedDateBadge").textContent = selectedDate;
-
   const missions = getMissionsForDate(selectedDate);
   completions[selectedDate] = completions[selectedDate] || {};
 
   missions.forEach((mission, i)=>{
     const tr=document.createElement("tr");
     const done = !!completions[selectedDate][mission];
-
     tr.innerHTML = `
       <td><input value="${escapeHTML(mission)}" onchange="editMission(${i}, this.value)" /></td>
       <td>${done ? "✅ Complete" : "❌ Not Complete"}</td>
@@ -349,7 +425,6 @@ function renderMissions(){
         <button onclick="toggleMission(${i})">${done ? "Undo" : "Complete"}</button>
         <button onclick="removeMission(${i})">Remove</button>
       </td>`;
-
     tbody.appendChild(tr);
   });
 }
@@ -357,10 +432,8 @@ function renderMissions(){
 function toggleMission(index){
   const missions = getMissionsForDate(selectedDate);
   const mission = missions[index];
-
   completions[selectedDate] = completions[selectedDate] || {};
   completions[selectedDate][mission] = !completions[selectedDate][mission];
-
   evaluateDay(selectedDate);
   renderMissions();
   renderCalendar();
@@ -369,10 +442,8 @@ function toggleMission(index){
 function addMissionForSelectedDay(){
   const val = document.getElementById("newMission").value.trim();
   if(!val) return;
-
   getMissionsForDate(selectedDate).push(val);
   document.getElementById("newMission").value = "";
-
   evaluateDay(selectedDate);
   save();
   renderMissions();
@@ -383,14 +454,11 @@ function editMission(i, val){
   const missions = getMissionsForDate(selectedDate);
   const old = missions[i];
   const updated = val.trim() || old;
-
   missions[i] = updated;
-
   if(completions[selectedDate]?.[old]){
     completions[selectedDate][updated] = completions[selectedDate][old];
     delete completions[selectedDate][old];
   }
-
   evaluateDay(selectedDate);
   save();
   renderMissions();
@@ -401,9 +469,7 @@ function removeMission(i){
   if(confirm("Remove this mission from this selected day?")){
     const missions = getMissionsForDate(selectedDate);
     const removed = missions.splice(i,1)[0];
-
     if(completions[selectedDate]) delete completions[selectedDate][removed];
-
     evaluateDay(selectedDate);
     save();
     renderMissions();
@@ -414,16 +480,11 @@ function removeMission(i){
 function renderTomorrowMissions(){
   const tbody = document.getElementById("tomorrowMissionTable");
   tbody.innerHTML = "";
-
   const tomorrow = addDays(todayKey(), 1);
   const missions = getMissionsForDate(tomorrow);
-
   missions.forEach((mission, i)=>{
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${escapeHTML(mission)}</td>
-      <td><button onclick="removeTomorrowMission(${i})">Remove</button></td>
-    `;
+    tr.innerHTML = `<td>${escapeHTML(mission)}</td><td><button onclick="removeTomorrowMission(${i})">Remove</button></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -432,10 +493,8 @@ function addTomorrowMission(){
   const input = document.getElementById("tomorrowMissionInput");
   const val = input.value.trim();
   if(!val) return;
-
   const tomorrow = addDays(todayKey(), 1);
   getMissionsForDate(tomorrow).push(val);
-
   input.value = "";
   save();
   renderTomorrowMissions();
@@ -445,10 +504,8 @@ function removeTomorrowMission(i){
   const tomorrow = addDays(todayKey(), 1);
   const missions = getMissionsForDate(tomorrow);
   missions.splice(i,1);
-
   save();
   renderTomorrowMissions();
-
   if(selectedDate === tomorrow){
     renderMissions();
     renderCalendar();
@@ -458,30 +515,18 @@ function removeTomorrowMission(i){
 function addWeight(){
   const date = document.getElementById("weightDate").value;
   const weight = Number(document.getElementById("weightValue").value);
-
   if(!date || !weight) return alert("Enter date and weight.");
-
-  if(weight < 85 || weight > 105){
-    alert("Weight should be between 85 kg and 105 kg for this graph.");
-    return;
-  }
-
+  if(weight < 85 || weight > 105) return alert("Weight should be between 85 kg and 105 kg for this graph.");
   weights = weights.filter(w => w.date !== date);
   weights.push({date, weight});
   weights.sort((a,b)=>new Date(a.date)-new Date(b.date));
-
   save();
   drawChart();
 }
 
 function saveTarget(){
   const newTarget = Number(document.getElementById("targetWeightInput").value);
-
-  if(newTarget < 85 || newTarget > 105){
-    alert("Target weight should be between 85 kg and 105 kg for this graph.");
-    return;
-  }
-
+  if(newTarget < 85 || newTarget > 105) return alert("Target weight should be between 85 kg and 105 kg for this graph.");
   targetWeight = newTarget;
   save();
   drawChart();
@@ -490,22 +535,17 @@ function saveTarget(){
 function drawChart(){
   const canvas=document.getElementById("weightChart");
   const ctx=canvas.getContext("2d");
-
   ctx.clearRect(0,0,canvas.width,canvas.height);
-
   weights.sort((a,b)=>new Date(a.date)-new Date(b.date));
 
   const latest = weights[weights.length-1];
   const start = new Date(weights[0].date + "T00:00:00");
   const end = proposalDate;
-
   const padL=80, padR=40, padT=35, padB=75;
   const chartW=canvas.width-padL-padR;
   const chartH=canvas.height-padT-padB;
-
   const minW = 85;
   const maxW = 105;
-
   const x = date => padL + ((new Date(date)-start)/(end-start))*chartW;
   const y = kg => padT + ((maxW-kg)/(maxW-minW))*chartH;
 
@@ -513,7 +553,6 @@ function drawChart(){
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
   drawGraphPaper(ctx, padL, padT, chartW, chartH, minW, maxW, start, end, x, y);
-
   drawAxes(ctx, padL, padT, chartW, chartH, minW, maxW, start, end, x, y);
 
   ctx.strokeStyle="#ef4444";
@@ -531,12 +570,10 @@ function drawChart(){
   ctx.strokeStyle="#f5c451";
   ctx.lineWidth=3;
   ctx.beginPath();
-
   weights.forEach((pt,i)=>{
     if(i===0) ctx.moveTo(x(pt.date), y(pt.weight));
     else ctx.lineTo(x(pt.date), y(pt.weight));
   });
-
   ctx.stroke();
 
   weights.forEach(pt=>{
@@ -544,7 +581,6 @@ function drawChart(){
     ctx.beginPath();
     ctx.arc(x(pt.date), y(pt.weight), 6, 0, Math.PI*2);
     ctx.fill();
-
     ctx.fillStyle="#f8fafc";
     ctx.font="12px Arial";
     ctx.fillText(`${pt.weight}`, x(pt.date)+8, y(pt.weight)-8);
@@ -570,7 +606,6 @@ function drawChart(){
 
 function drawGraphPaper(ctx, padL, padT, chartW, chartH, minW, maxW, start, end, x, y){
   ctx.lineWidth=1;
-
   for(let kg=minW; kg<=maxW; kg+=1){
     ctx.strokeStyle = kg % 5 === 0 ? "rgba(148,163,184,.26)" : "rgba(148,163,184,.11)";
     ctx.beginPath();
@@ -581,17 +616,14 @@ function drawGraphPaper(ctx, padL, padT, chartW, chartH, minW, maxW, start, end,
 
   const d = new Date(start);
   d.setDate(1);
-
   while(d <= end){
     const isMonth = d.getDate() === 1;
     ctx.strokeStyle = isMonth ? "rgba(245,196,81,.36)" : "rgba(148,163,184,.10)";
     ctx.lineWidth = isMonth ? 2 : 1;
-
     ctx.beginPath();
     ctx.moveTo(x(d), padT);
     ctx.lineTo(x(d), padT+chartH);
     ctx.stroke();
-
     d.setDate(d.getDate()+7);
   }
 }
@@ -607,13 +639,11 @@ function drawAxes(ctx, padL, padT, chartW, chartH, minW, maxW, start, end, x, y)
 
   ctx.fillStyle="#f8fafc";
   ctx.font="14px Arial";
-
   ctx.save();
   ctx.translate(24, padT + chartH/2);
   ctx.rotate(-Math.PI/2);
   ctx.fillText("Weight in kg", 0, 0);
   ctx.restore();
-
   ctx.fillText("Months leading to proposal", padL + chartW/2 - 80, padT + chartH + 58);
 
   for(let kg=minW; kg<=maxW; kg+=5){
@@ -623,7 +653,6 @@ function drawAxes(ctx, padL, padT, chartW, chartH, minW, maxW, start, end, x, y)
 
   const month = new Date(start);
   month.setDate(1);
-
   while(month <= end){
     ctx.fillStyle="#94a3b8";
     ctx.font="13px Arial";
@@ -643,7 +672,6 @@ function escapeHTML(str){
 }
 
 document.getElementById("weightDate").value = todayKey();
-
 autoCheckPastDays();
 getMissionsForDate(todayKey());
 motivation();
@@ -651,6 +679,7 @@ renderCalendar();
 renderMissions();
 renderTomorrowMissions();
 drawChart();
+initSync();
 setInterval(motivation, 60000);
 </script>
 
