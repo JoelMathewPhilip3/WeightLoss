@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Joel's Movie Kingdom</title>
+
+<!-- PWA -->
+<meta name="application-name" content="Movie Kingdom">
+<meta name="apple-mobile-web-app-title" content="Movie Kingdom">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#09090e">
+<meta name="msapplication-TileColor" content="#09090e">
+<link rel="manifest" href="manifest.json">
+
+<!-- Inline SVG favicon (crown) so no external file needed -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👑</text></svg>">
+<!-- Apple touch icon (gold crown on dark bg, base64 PNG 192x192) -->
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#09090e; --surface:#111118; --surface2:#1a1a26; --surface3:#22223a;
+  --gold:#c9a84c; --gold2:#f0d080; --gold3:#8a6a20; --crimson:#9b2335;
+  --text:#ede8df; --muted:#7a788a; --border:rgba(201,168,76,0.12);
+  --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;overflow-x:hidden;}
+
+/* INTRO */
+#intro{position:fixed;inset:0;z-index:9999;background:#000;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.door-left,.door-right{
+  position:absolute;top:0;width:50%;height:100%;background:#0a0a0e;
+  transition:transform 1.4s cubic-bezier(.7,0,.2,1);
+  display:flex;align-items:center;will-change:transform;
+}
+.door-left{left:0;justify-content:flex-end;border-right:1px solid rgba(201,168,76,0.3);}
+.door-right{right:0;justify-content:flex-start;border-left:1px solid rgba(201,168,76,0.3);}
+.door-ornament{width:80px;height:80px;opacity:0.15;flex-shrink:0;
+  background:radial-gradient(circle,rgba(201,168,76,0.6) 0%,transparent 70%);}
+#intro.open .door-left{transform:translateX(-100%);}
+#intro.open .door-right{transform:translateX(100%);}
+.intro-title{position:absolute;text-align:center;z-index:2;pointer-events:none;
+  animation:titleGlow 2s ease-in-out infinite alternate;}
+.intro-crown{font-size:3rem;margin-bottom:8px;opacity:0.85;}
+.intro-name{font-family:'Cinzel Decorative',serif;font-size:clamp(1.6rem,5vw,3.4rem);
+  color:var(--gold2);text-shadow:0 0 40px rgba(201,168,76,0.8),0 0 80px rgba(201,168,76,0.3);
+  letter-spacing:4px;line-height:1.2;}
+.intro-sub{font-family:'Cinzel',serif;font-size:0.9rem;letter-spacing:6px;
+  color:rgba(201,168,76,0.6);margin-top:10px;text-transform:uppercase;}
+@keyframes titleGlow{
+  from{text-shadow:0 0 30px rgba(201,168,76,0.6),0 0 60px rgba(201,168,76,0.2);}
+  to{text-shadow:0 0 60px rgba(201,168,76,1),0 0 100px rgba(201,168,76,0.5);}
+}
+#intro.fade-out{opacity:0;transition:opacity 0.8s ease;pointer-events:none;}
+
+/* SITE HEADER */
+#site-header{padding:20px 32px 0;display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.site-logo{font-family:'Cinzel Decorative',serif;font-size:clamp(1rem,2.5vw,1.6rem);
+  color:var(--gold2);text-shadow:0 0 20px rgba(201,168,76,0.4);letter-spacing:2px;}
+
+.user-area{display:flex;align-items:center;gap:8px;}
+.user-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  padding:6px 14px;color:var(--text);font-family:'DM Sans',sans-serif;
+  font-size:13px;cursor:pointer;transition:border-color .2s,background .2s;display:flex;
+  align-items:center;gap:8px;position:relative;}
+.user-btn:hover{border-color:rgba(201,168,76,0.4);background:var(--surface3);}
+.user-avatar{width:26px;height:26px;border-radius:50%;background:var(--gold3);
+  display:flex;align-items:center;justify-content:center;font-size:11px;
+  font-weight:600;color:var(--gold2);flex-shrink:0;}
+.user-btn-content{display:flex;flex-direction:column;align-items:flex-start;gap:1px;}
+.user-btn-name{display:flex;align-items:center;gap:6px;font-size:13px;line-height:1;}
+.user-btn-arrow{font-size:10px;color:var(--gold);transition:transform .2s;}
+.user-btn-hint{font-size:9px;color:var(--muted);letter-spacing:0.5px;line-height:1;}
+.user-wrap:hover .user-btn-arrow{transform:rotate(180deg);}
+.user-dropdown{position:absolute;right:0;top:calc(100% + 6px);
+  background:var(--surface2);border:1px solid var(--border);border-radius:12px;
+  min-width:210px;z-index:200;padding:8px;display:none;
+  box-shadow:0 8px 32px rgba(0,0,0,0.6);}
+.user-wrap{position:relative;}
+.user-wrap:hover .user-dropdown,.user-dropdown:hover{display:block;}
+.ud-user{display:flex;align-items:center;gap:10px;padding:8px 10px;
+  border-radius:8px;cursor:pointer;transition:background .15s;}
+.ud-user:hover{background:rgba(201,168,76,0.08);}
+.ud-user.active{background:rgba(201,168,76,0.1);}
+.ud-name{font-size:13px;}
+.ud-sep{height:1px;background:var(--border);margin:6px 0;}
+.ud-add{display:flex;align-items:center;gap:8px;padding:8px 10px;
+  border-radius:8px;cursor:pointer;color:var(--gold);font-size:13px;transition:background .15s;}
+.ud-add:hover{background:rgba(201,168,76,0.08);}
+.ud-add-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:6px 10px;color:var(--text);font-size:13px;width:100%;margin-top:6px;display:none;}
+.ud-add-input.on{display:block;}
+.ud-add-btn{background:var(--gold3);border:none;border-radius:6px;
+  padding:6px 12px;color:var(--gold2);font-size:12px;cursor:pointer;
+  margin-top:6px;width:100%;display:none;}
+.ud-add-btn.on{display:block;}
+
+/* API BANNER */
+#api-banner{background:#140f0f;border:1px solid rgba(155,35,53,0.4);border-radius:10px;
+  padding:14px 20px;margin:14px 32px;font-size:13px;color:#f0a0a0;line-height:1.7;}
+#api-banner a{color:var(--gold);text-decoration:none;}
+#api-banner.hidden{display:none;}
+.api-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center;}
+.api-row input{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.1);
+  border-radius:6px;padding:7px 12px;color:var(--text);font-size:13px;width:230px;}
+.api-row button{background:var(--crimson);border:none;border-radius:6px;
+  padding:7px 18px;color:#fff;font-size:13px;cursor:pointer;}
+
+/* MAIN */
+.main{padding:18px 32px 60px;}
+
+/* TABS */
+.tabs{display:flex;gap:0;margin-bottom:22px;border-bottom:1px solid var(--border);}
+.tab{font-family:'Cinzel',serif;font-size:13px;letter-spacing:2px;
+  padding:12px 22px;cursor:pointer;color:var(--muted);
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  transition:color .2s,border-color .2s;text-transform:uppercase;}
+.tab:hover{color:var(--gold);}
+.tab.active{color:var(--gold2);border-bottom-color:var(--gold);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+/* RECENTLY WATCHED */
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.sec-title{font-family:'Cinzel',serif;font-size:1rem;letter-spacing:2px;
+  color:var(--gold);text-transform:uppercase;}
+.clear-btn{font-size:12px;color:var(--muted);background:none;
+  border:1px solid var(--border);padding:4px 12px;border-radius:6px;
+  cursor:pointer;transition:color .2s,border-color .2s;}
+.clear-btn:hover{color:var(--crimson);border-color:var(--crimson);}
+#recent-grid-en,#recent-grid-hi,#recent-grid-ml,#recent-grid-ta,#recent-grid-yt{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:12px;margin-bottom:24px;}
+.no-recent{color:var(--muted);font-size:13px;padding:12px 0 24px;text-align:center;}
+.rc{background:var(--surface);border-radius:10px;overflow:hidden;
+  border:1px solid var(--border);cursor:pointer;
+  transition:transform .2s,border-color .2s;position:relative;}
+.rc:hover{transform:translateY(-4px);border-color:rgba(201,168,76,.35);}
+.rc img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:var(--surface2);}
+.rc-info{padding:7px 9px 9px;}
+.rc-title{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rc-meta{font-size:10px;color:var(--muted);margin-top:2px;}
+.rc-rm{position:absolute;top:5px;right:5px;background:rgba(0,0,0,.75);border:none;
+  color:#fff;width:20px;height:20px;border-radius:50%;font-size:11px;
+  cursor:pointer;display:none;align-items:center;justify-content:center;}
+.rc:hover .rc-rm{display:flex;}
+
+/* SEARCH */
+.search-sec{background:var(--surface);border-radius:14px;padding:24px;
+  margin-bottom:20px;border:1px solid var(--border);}
+.section-label{font-size:10px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:12px;}
+.search-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;}
+.srch-wrap{flex:1;min-width:200px;position:relative;}
+.srch-wrap input{width:100%;background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--radius);padding:11px 16px;color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:14px;transition:border-color .2s;}
+.srch-wrap input:focus{outline:none;border-color:var(--gold);}
+#sug-en,#sug-hi,#sug-ml,#sug-ta,#sug-yt{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);
+  z-index:100;max-height:320px;overflow-y:auto;}
+.sug-item{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;
+  transition:background .15s;border-bottom:1px solid var(--border);}
+.sug-item:last-child{border-bottom:none;}
+.sug-item:hover{background:rgba(201,168,76,.07);}
+.sug-poster{width:32px;height:46px;border-radius:4px;object-fit:cover;background:var(--bg);flex-shrink:0;}
+.sug-thumb{width:56px;height:32px;border-radius:4px;object-fit:cover;background:var(--bg);flex-shrink:0;}
+.sug-no-img{width:32px;height:46px;border-radius:4px;background:var(--surface);
+  display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:16px;flex-shrink:0;}
+.sug-yt-no-img{width:56px;height:32px;border-radius:4px;background:var(--surface);
+  display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:16px;flex-shrink:0;}
+.sug-info{flex:1;min-width:0;}
+.sug-title{font-size:13px;font-weight:500;}
+.sug-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.sug-badge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;flex-shrink:0;}
+.badge-movie{background:rgba(201,168,76,.15);color:var(--gold);}
+.badge-series{background:rgba(155,35,53,.2);color:#f07a7c;}
+.badge-yt{background:rgba(255,0,0,.15);color:#ff6b6b;}
+.ctrl-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:12px;}
+.ctrl-grp{display:flex;flex-direction:column;gap:5px;}
+.ctrl-lbl{font-size:10px;color:var(--muted);letter-spacing:1px;}
+select,.num-in{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);
+  padding:8px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;}
+select:focus,.num-in:focus{outline:none;border-color:var(--gold);}
+.num-in{width:72px;}
+.series-ctrl{display:none;gap:10px;flex-wrap:wrap;}
+.series-ctrl.on{display:flex;}
+.play-btn{background:linear-gradient(135deg,var(--gold3),var(--gold));
+  border:none;border-radius:var(--radius);padding:9px 26px;
+  color:#0a0908;font-family:'Cinzel',serif;font-size:13px;font-weight:700;
+  cursor:pointer;letter-spacing:1px;transition:opacity .2s,transform .1s;}
+.play-btn:hover{opacity:.9;transform:translateY(-1px);}
+
+/* NOW PLAYING BAR */
+.now-bar{background:var(--surface);border:1px solid rgba(201,168,76,.2);
+  border-radius:12px;padding:12px 20px;margin-bottom:18px;
+  display:none;gap:12px;align-items:center;flex-wrap:wrap;}
+.now-bar.on{display:flex;}
+.np-img{width:44px;height:62px;border-radius:5px;object-fit:cover;background:var(--surface2);flex-shrink:0;}
+.np-yt-img{width:76px;height:44px;border-radius:5px;object-fit:cover;background:var(--surface2);flex-shrink:0;}
+.np-det{flex:1;min-width:0;}
+.np-title{font-family:'Cinzel',serif;font-size:1rem;color:var(--gold);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.np-meta{font-size:12px;color:var(--muted);margin-top:3px;}
+.np-pill{font-size:10px;padding:2px 8px;border-radius:16px;margin-right:5px;}
+.pill-movie{background:rgba(201,168,76,.15);color:var(--gold);}
+.pill-series{background:rgba(155,35,53,.2);color:#f07a7c;}
+.np-star{font-size:12px;color:var(--gold);}
+
+/* PLAYER */
+.player-outer{background:var(--surface);border-radius:14px;overflow:hidden;
+  margin-bottom:22px;border:1px solid var(--border);display:none;}
+.player-outer.on{display:block;}
+.player-stage{width:100%;background:#000;position:relative;}
+.player-stage .iframe-wrap{position:relative;padding-top:56.25%;}
+.vid-frame{position:absolute;top:0;left:0;width:100%;height:100%;border:none;}
+.player-stage.default .iframe-wrap{max-width:760px;margin:0 auto;padding-top:0;height:430px;}
+.player-stage.theatre .iframe-wrap{padding-top:0;height:75vh;}
+.player-controls{padding:10px 16px;border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.view-btns{display:flex;gap:4px;}
+.vbtn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+  padding:5px 12px;color:var(--muted);font-size:12px;cursor:pointer;transition:color .15s,border-color .15s;}
+.vbtn.active{color:var(--gold);border-color:rgba(201,168,76,.5);}
+.vbtn:hover{color:var(--gold);}
+.server-wrap{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.server-lbl{font-size:11px;color:var(--muted);}
+.server-select{background:var(--surface2);border:1px solid var(--border);
+  border-radius:6px;padding:5px 10px;color:var(--text);font-size:12px;cursor:pointer;min-width:160px;}
+.server-select:focus{outline:none;border-color:var(--gold);}
+.srv-health-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+  padding:5px 10px;color:var(--muted);font-size:11px;cursor:pointer;
+  transition:color .15s,border-color .15s;white-space:nowrap;}
+.srv-health-btn:hover{color:var(--gold);border-color:rgba(201,168,76,.4);}
+.dot-green{color:#4caf82;} .dot-yellow{color:#c9a84c;} .dot-red{color:#9b2335;} .dot-grey{color:#555;}
+.srv-manage-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+  padding:5px 10px;color:var(--muted);font-size:11px;cursor:pointer;}
+.srv-manage-btn:hover{color:var(--gold);}
+.srv-panel{background:var(--surface2);border:1px solid var(--border);border-radius:12px;
+  padding:16px;margin:10px 16px;display:none;}
+.srv-panel.on{display:block;}
+.srv-panel-title{font-family:'Cinzel',serif;font-size:12px;color:var(--gold);
+  letter-spacing:2px;margin-bottom:12px;text-transform:uppercase;}
+.srv-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.srv-row{display:flex;align-items:center;gap:8px;padding:7px 10px;
+  background:var(--bg);border-radius:8px;border:1px solid var(--border);}
+.srv-dot{font-size:14px;flex-shrink:0;min-width:16px;text-align:center;}
+.srv-name{flex:1;font-size:13px;}
+.srv-status-txt{font-size:11px;color:var(--muted);min-width:80px;text-align:right;}
+.srv-toggle{background:none;border:1px solid var(--border);border-radius:5px;
+  padding:3px 10px;font-size:11px;color:var(--muted);cursor:pointer;}
+.srv-toggle:hover{border-color:rgba(201,168,76,.4);color:var(--gold);}
+.srv-toggle.hidden-srv{border-color:rgba(155,35,53,.4);color:#f07a7c;}
+.srv-panel-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.srv-act-btn{background:linear-gradient(135deg,var(--gold3),var(--gold));
+  border:none;border-radius:7px;padding:7px 16px;color:#0a0908;font-size:12px;font-weight:700;cursor:pointer;}
+.srv-act-btn.secondary{background:var(--surface);border:1px solid var(--border);color:var(--text);font-weight:400;}
+.srv-act-btn.secondary:hover{border-color:rgba(201,168,76,.4);color:var(--gold);}
+.add-srv-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.add-srv-inp{flex:1;min-width:140px;background:var(--bg);border:1px solid var(--border);
+  border-radius:6px;padding:7px 10px;color:var(--text);font-size:12px;}
+.add-srv-inp:focus{outline:none;border-color:var(--gold);}
+.add-srv-btn{background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:7px 14px;color:var(--gold);font-size:12px;cursor:pointer;}
+.add-srv-btn:hover{border-color:rgba(201,168,76,.5);}
+.spinner{display:inline-block;width:14px;height:14px;
+  border:2px solid rgba(201,168,76,.3);border-top-color:var(--gold);
+  border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ========== SERIES INFO PANEL (EN) ========== */
+.series-info-panel{
+  background:var(--surface);border:1px solid rgba(201,168,76,.2);
+  border-radius:12px;padding:16px 20px;margin-bottom:16px;display:none;
+}
+.series-info-panel.on{display:block;}
+.sip-header{font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;
+  color:var(--gold);text-transform:uppercase;margin-bottom:12px;}
+.sip-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px;}
+.sip-card{background:var(--surface2);border-radius:8px;padding:10px 14px;border:1px solid var(--border);}
+.sip-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.sip-val{font-family:'Cinzel',serif;font-size:1.2rem;color:var(--gold2);font-weight:700;}
+.sip-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+.sip-loading{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;}
+.ep-progress{margin-top:10px;}
+.ep-progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px;}
+.ep-bar-track{background:var(--surface3);border-radius:4px;height:6px;overflow:hidden;}
+.ep-bar-fill{background:linear-gradient(90deg,var(--gold3),var(--gold));height:100%;border-radius:4px;transition:width .4s ease;}
+.lw-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;
+  padding-top:12px;border-top:1px solid var(--border);}
+.lw-badge{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);
+  border-radius:8px;padding:8px 14px;font-size:12px;color:var(--muted);flex:1;min-width:180px;line-height:1.6;}
+.lw-badge strong{color:var(--gold2);font-weight:500;}
+.ts-input-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.ts-label{font-size:11px;color:var(--muted);}
+.ts-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:6px 10px;color:var(--text);font-size:13px;width:90px;
+  font-family:'DM Sans',sans-serif;text-align:center;}
+.ts-input:focus{outline:none;border-color:var(--gold);}
+.ts-save-btn{background:var(--gold3);border:none;border-radius:6px;
+  padding:6px 14px;color:var(--gold2);font-size:12px;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:opacity .2s;}
+.ts-save-btn:hover{opacity:.85;}
+.ts-clear-btn{background:none;border:1px solid var(--border);border-radius:6px;
+  padding:6px 12px;color:var(--muted);font-size:12px;cursor:pointer;transition:color .2s,border-color .2s;}
+.ts-clear-btn:hover{color:var(--crimson);border-color:var(--crimson);}
+.ts-saved-flash{font-size:11px;color:#4caf82;display:none;}
+.ts-saved-flash.on{display:inline;}
+
+/* YOUTUBE */
+.yt-search-row{display:flex;gap:10px;flex-wrap:wrap;}
+.yt-url-wrap{flex:1;min-width:220px;position:relative;}
+.yt-url-wrap input{width:100%;background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--radius);padding:11px 16px;color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:14px;}
+.yt-url-wrap input:focus{outline:none;border-color:var(--gold);}
+.yt-load-btn{background:linear-gradient(135deg,var(--gold3),var(--gold));
+  border:none;border-radius:var(--radius);padding:9px 22px;
+  color:#0a0908;font-family:'Cinzel',serif;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px;}
+.converter-sec{background:var(--surface);border-radius:14px;padding:22px;margin-top:0;border:1px solid var(--border);}
+.conv-info{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px;}
+.conv-thumb{width:120px;height:68px;border-radius:8px;object-fit:cover;background:var(--surface2);flex-shrink:0;}
+.conv-det{flex:1;}
+.conv-title{font-family:'Cinzel',serif;font-size:0.95rem;color:var(--gold);margin-bottom:4px;}
+.conv-meta{font-size:12px;color:var(--muted);}
+.conv-actions{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+.conv-btn{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:10px 18px;color:var(--text);font-size:13px;cursor:pointer;
+  transition:border-color .2s,color .2s;text-decoration:none;}
+.conv-btn:hover{border-color:rgba(201,168,76,.4);color:var(--gold);}
+.conv-btn.primary{background:linear-gradient(135deg,var(--gold3),var(--gold));
+  border-color:transparent;color:#0a0908;font-weight:600;}
+.conv-btn.primary:hover{opacity:.9;color:#0a0908;}
+
+/* EINTHUSAN */
+.ein-helper{background:var(--surface);border-radius:14px;padding:20px;
+  margin-bottom:18px;border:1px solid var(--border);}
+.ein-helper-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center;}
+.ein-helper-row input{flex:1;min-width:200px;background:var(--bg);
+  border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;
+  color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;}
+.ein-helper-row input:focus{outline:none;border-color:var(--gold);}
+.ein-dl-btn{background:linear-gradient(135deg,var(--gold3),var(--gold));
+  border:none;border-radius:var(--radius);padding:9px 18px;
+  color:#0a0908;font-family:'Cinzel',serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px;}
+.ein-browse-btn{background:var(--surface2);border:1px solid rgba(201,168,76,.3);border-radius:var(--radius);
+  padding:9px 16px;color:var(--gold);font-size:12px;cursor:pointer;text-decoration:none;
+  display:inline-flex;align-items:center;gap:6px;transition:background .2s,border-color .2s;white-space:nowrap;}
+.ein-browse-btn:hover{background:rgba(201,168,76,.1);border-color:rgba(201,168,76,.6);}
+.ein-note{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6;}
+.ein-links-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+
+/* ========== CONTINUE WATCHING CARD ========== */
+.cw-row{display:flex;gap:14px;margin-bottom:22px;flex-wrap:wrap;}
+.cw-card{
+  background:var(--surface);border:1px solid rgba(201,168,76,.25);border-radius:12px;
+  padding:14px 16px;display:flex;gap:12px;align-items:center;
+  flex:1;min-width:240px;max-width:420px;cursor:pointer;
+  transition:border-color .2s,transform .15s;position:relative;
+}
+.cw-card:hover{border-color:rgba(201,168,76,.5);transform:translateY(-2px);}
+.cw-card.empty{opacity:.45;cursor:default;}
+.cw-card.empty:hover{transform:none;border-color:rgba(201,168,76,.25);}
+.cw-poster{width:48px;height:68px;border-radius:6px;object-fit:cover;
+  background:var(--surface2);flex-shrink:0;}
+.cw-det{flex:1;min-width:0;}
+.cw-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--gold);margin-bottom:4px;}
+.cw-title{font-family:'Cinzel',serif;font-size:0.85rem;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;}
+.cw-meta{font-size:11px;color:var(--muted);margin-bottom:4px;}
+.cw-ts{font-size:11px;color:var(--gold);font-weight:500;}
+.cw-play{background:linear-gradient(135deg,var(--gold3),var(--gold));
+  border:none;border-radius:6px;padding:5px 12px;color:#0a0908;
+  font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+
+/* ========== NEXT / PREV EPISODE BUTTONS ========== */
+.ep-nav-bar{
+  display:none;align-items:center;justify-content:center;gap:12px;
+  padding:10px 16px;border-top:1px solid var(--border);flex-wrap:wrap;
+}
+.ep-nav-bar.on{display:flex;}
+.ep-nav-btn{
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  padding:8px 20px;color:var(--text);font-family:'Cinzel',serif;font-size:12px;
+  letter-spacing:1px;cursor:pointer;transition:border-color .2s,color .2s,background .2s;
+  display:flex;align-items:center;gap:8px;
+}
+.ep-nav-btn:hover{border-color:rgba(201,168,76,.5);color:var(--gold);background:var(--surface3);}
+.ep-nav-btn:disabled{opacity:.3;cursor:not-allowed;}
+.ep-nav-btn.next-btn{
+  background:linear-gradient(135deg,var(--gold3),var(--gold));
+  border-color:transparent;color:#0a0908;font-weight:700;
+}
+.ep-nav-btn.next-btn:hover{opacity:.9;color:#0a0908;}
+.ep-nav-info{font-size:12px;color:var(--muted);text-align:center;min-width:80px;}
+
+/* ========== SYNC STATUS INDICATOR ========== */
+.sync-dot{
+  display:inline-flex;align-items:center;gap:5px;font-size:10px;
+  color:var(--muted);padding:3px 8px;border-radius:10px;
+  background:var(--surface2);border:1px solid var(--border);
+  margin-left:8px;vertical-align:middle;
+}
+.sync-dot.syncing{color:var(--gold);}
+.sync-dot.synced{color:#4caf82;}
+.sync-dot.error{color:#f07a7c;}
+.sync-pulse{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.sync-pulse.anim{animation:pulse .8s ease-in-out infinite alternate;}
+@keyframes pulse{from{opacity:.3;}to{opacity:1;}}
+
+@media(max-width:640px){
+  #site-header{padding:14px 16px 0;}
+  .main{padding:12px 16px 40px;}
+  #api-banner{margin:10px 16px;}
+  .tab{padding:10px 14px;font-size:11px;letter-spacing:1px;}
+  .player-stage.default .iframe-wrap{height:240px;}
+  .player-stage.theatre .iframe-wrap{height:56vw;}
+  .sip-grid{grid-template-columns:1fr 1fr;}
+  .cw-card{max-width:100%;}
+}
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div id="intro">
+  <div class="door-left"><div class="door-ornament"></div></div>
+  <div class="door-right"><div class="door-ornament"></div></div>
+  <div class="intro-title">
+    <div class="intro-crown">👑</div>
+    <div class="intro-name">Joel's<br>Movie Kingdom</div>
+    <div class="intro-sub">Your Personal Cinema</div>
+  </div>
+</div>
+
+<!-- SITE HEADER -->
+<div id="site-header">
+  <div class="site-logo">👑 Joel's Movie Kingdom</div>
+  <div class="user-area">
+    <div class="user-wrap">
+      <button class="user-btn" id="current-user-btn">
+        <div class="user-avatar" id="user-avatar-hdr">J</div>
+        <div class="user-btn-content">
+          <div class="user-btn-name">
+            <span id="user-name-hdr">Joel</span>
+            <span class="user-btn-arrow">▾</span>
+          </div>
+          <div class="user-btn-hint">click here &nbsp;·&nbsp; + to add user</div>
+        </div>
+      </button>
+      <div class="user-dropdown" id="user-dropdown">
+        <div id="ud-users-list"></div>
+        <div class="ud-sep"></div>
+        <div class="ud-add" onclick="toggleAddUser()">＋ Add New User</div>
+        <input type="text" class="ud-add-input" id="new-user-input" placeholder="Enter name…" onkeydown="if(event.key==='Enter')createUser()" />
+        <button class="ud-add-btn" id="new-user-btn" onclick="createUser()">Create User</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- API BANNER -->
+<div id="api-banner">
+  <strong>One-time setup:</strong> A free TMDB API key powers all movie/TV search and posters. It takes ~2 min and never expires.<br>
+  → <a href="https://www.themoviedb.org/signup" target="_blank">Create free TMDB account</a> then: Settings → API → copy the <em>API Key (v3 auth)</em>
+  <div class="api-row">
+    <input type="text" id="api-key-input" placeholder="Paste TMDB API key here" />
+    <button onclick="saveKey()">Save &amp; Start</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="tabs">
+    <div class="tab active" data-tab="en" onclick="switchTab('en')">🇺🇸 English</div>
+    <div class="tab" data-tab="ml" onclick="switchTab('ml')">🇮🇳 Malayalam</div>
+    <div class="tab" data-tab="hi" onclick="switchTab('hi')">🇮🇳 Hindi</div>
+    <div class="tab" data-tab="ta" onclick="switchTab('ta')">🇮🇳 Tamil</div>
+    <div class="tab" data-tab="yt" onclick="switchTab('yt')">▶ YouTube</div>
+  </div>
+
+  <!-- ========== ENGLISH TAB ========== -->
+  <div class="tab-content active" id="tab-en">
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;margin-bottom:0;">
+      <div style="flex:2;min-width:260px;">
+        <div class="sec-header">
+          <div class="sec-title">Recently Watched <span class="sync-dot" id="sync-dot-en"><span class="sync-pulse" id="sync-pulse-en"></span><span id="sync-label-en">…</span></span></div>
+          <button class="clear-btn" onclick="clearRecent('en')">Clear</button>
+        </div>
+        <div id="recent-grid-en"></div>
+        <div class="no-recent" id="no-recent-en">Nothing watched yet.</div>
+      </div>
+      <div style="flex:1;min-width:220px;max-width:340px;">
+        <div class="sec-header"><div class="sec-title">Continue Watching</div></div>
+        <div class="cw-card empty" id="cw-card-en" onclick="cwResume('en')">
+          <img class="cw-poster" id="cw-poster-en" src="" alt="" style="display:none"/>
+          <div class="cw-det">
+            <div class="cw-label">▶ Resume</div>
+            <div class="cw-title" id="cw-title-en">Nothing yet</div>
+            <div class="cw-meta" id="cw-meta-en">Watch something to continue here</div>
+            <div class="cw-ts" id="cw-ts-en"></div>
+          </div>
+          <button class="cw-play" id="cw-play-en" style="display:none">▶ Play</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="search-sec">
+      <div class="section-label">Search Movie or Series</div>
+      <div class="search-row">
+        <div class="srch-wrap">
+          <input type="text" id="srch-en" placeholder="Type title…" autocomplete="off" />
+          <div id="sug-en"></div>
+        </div>
+      </div>
+      <div class="ctrl-row">
+        <div class="series-ctrl" id="sc-en">
+          <div class="ctrl-grp"><div class="ctrl-lbl">Season</div>
+            <input type="number" class="num-in" id="s-en" value="1" min="1" onchange="onSeasonChange()" /></div>
+          <div class="ctrl-grp"><div class="ctrl-lbl">Episode</div>
+            <input type="number" class="num-in" id="e-en" value="1" min="1" /></div>
+        </div>
+        <button class="play-btn" onclick="playMovie('en')">▶ Play</button>
+      </div>
+    </div>
+
+    <!-- ===== SERIES INFO PANEL (English only) ===== -->
+    <div class="series-info-panel" id="sip-en">
+      <div class="sip-header">📺 Series Overview</div>
+      <div id="sip-loading-en" class="sip-loading"><span class="spinner"></span>Loading series info…</div>
+      <div id="sip-content-en" style="display:none;">
+        <div class="sip-grid">
+          <div class="sip-card">
+            <div class="sip-label">Total Seasons</div>
+            <div class="sip-val" id="sip-seasons-en">—</div>
+            <div class="sip-sub" id="sip-seasons-sub-en"></div>
+          </div>
+          <div class="sip-card">
+            <div class="sip-label">Episodes This Season</div>
+            <div class="sip-val" id="sip-eps-en">—</div>
+            <div class="sip-sub" id="sip-eps-sub-en"></div>
+          </div>
+          <div class="sip-card">
+            <div class="sip-label">Status</div>
+            <div class="sip-val" id="sip-status-en" style="font-size:0.85rem;">—</div>
+            <div class="sip-sub" id="sip-status-sub-en"></div>
+          </div>
+        </div>
+        <div class="ep-progress">
+          <div class="ep-progress-label">
+            <span>Season progress</span>
+            <span id="sip-prog-label-en">Ep 1 of —</span>
+          </div>
+          <div class="ep-bar-track"><div class="ep-bar-fill" id="sip-bar-en" style="width:0%"></div></div>
+        </div>
+        <div class="lw-row">
+          <div class="lw-badge" id="lw-badge-en">
+            Last watched: <strong id="lw-text-en">—</strong>
+          </div>
+          <div class="ts-input-row">
+            <span class="ts-label">Timestamp:</span>
+            <input type="text" class="ts-input" id="ts-input-en" placeholder="e.g. 24:15" title="Enter timestamp where you stopped (mm:ss or h:mm:ss)" />
+            <button class="ts-save-btn" onclick="saveTimestamp('en')">💾 Save</button>
+            <button class="ts-clear-btn" onclick="clearTimestamp('en')">Clear</button>
+            <span class="ts-saved-flash" id="ts-flash-en">✓ Saved!</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="now-bar" id="nb-en">
+      <img class="np-img" id="npi-en" src="" alt="" />
+      <div class="np-det">
+        <div class="np-title" id="npt-en"></div>
+        <div class="np-meta" id="npm-en"></div>
+      </div>
+      <div class="np-star" id="nps-en"></div>
+    </div>
+
+    <div class="player-outer" id="po-en">
+      <div class="player-stage default" id="ps-en">
+        <div class="iframe-wrap"><iframe class="vid-frame" id="vf-en"
+          allowfullscreen referrerpolicy="origin"
+          allow="autoplay; fullscreen; encrypted-media"></iframe></div>
+      </div>
+      <div class="player-controls">
+        <div class="view-btns">
+          <button class="vbtn active" onclick="setView('en','default',this)">Default</button>
+          <button class="vbtn" onclick="setView('en','theatre',this)">Theatre</button>
+          <button class="vbtn" onclick="fsPlayer('en')">⛶ Fullscreen</button>
+        </div>
+        <div class="server-wrap">
+          <span class="server-lbl">Server:</span>
+          <select class="server-select" id="srv-en" onchange="changeServer('en')"></select>
+          <button class="srv-health-btn" onclick="testAllServers('en')">⚡ Test Servers</button>
+          <button class="srv-manage-btn" onclick="toggleSrvPanel('en')">⚙ Manage</button>
+        </div>
+      </div>
+      <div class="ep-nav-bar" id="ep-nav-en">
+        <button class="ep-nav-btn" id="prev-ep-en" onclick="navEpisode('en',-1)">&#8592; Previous Episode</button>
+        <div class="ep-nav-info" id="ep-nav-info-en"></div>
+        <button class="ep-nav-btn next-btn" id="next-ep-en" onclick="navEpisode('en',1)">Next Episode &#8594;</button>
+      </div>
+      <div class="srv-panel" id="srv-panel-en">
+        <div class="srv-panel-title">Server Manager</div>
+        <div class="srv-list" id="srv-list-en"></div>
+        <div class="add-srv-row">
+          <input class="add-srv-inp" id="add-srv-name-en" placeholder="Server name (e.g. MyServer)" />
+          <input class="add-srv-inp" id="add-srv-movie-en" placeholder="Movie URL template (use {id})" />
+          <input class="add-srv-inp" id="add-srv-tv-en" placeholder="TV URL template (use {id},{s},{e})" />
+          <button class="add-srv-btn" onclick="addCustomServer('en')">＋ Add</button>
+        </div>
+        <div class="srv-panel-actions" style="margin-top:12px;">
+          <button class="srv-act-btn" onclick="testAllServers('en')">⚡ Test All Servers</button>
+          <button class="srv-act-btn secondary" onclick="resetServers('en')">↺ Reset to Defaults</button>
+          <button class="srv-act-btn secondary" onclick="autoRemoveBroken('en')">🗑 Remove Red Servers</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== MALAYALAM TAB ========== -->
+  <div class="tab-content" id="tab-ml">
+    <div class="sec-header">
+      <div class="sec-title">Recently Watched</div>
+      <button class="clear-btn" onclick="clearRecent('ml')">Clear</button>
+    </div>
+    <div id="recent-grid-ml"></div>
+    <div class="no-recent" id="no-recent-ml">Nothing watched yet.</div>
+    <div class="search-sec">
+      <div class="section-label">Search Malayalam Movie or Series</div>
+      <div class="search-row">
+        <div class="srch-wrap">
+          <input type="text" id="srch-ml" placeholder="Type title…" autocomplete="off" />
+          <div id="sug-ml"></div>
+        </div>
+      </div>
+      <div class="ctrl-row">
+        <div class="series-ctrl" id="sc-ml">
+          <div class="ctrl-grp"><div class="ctrl-lbl">Season</div>
+            <input type="number" class="num-in" id="s-ml" value="1" min="1" /></div>
+          <div class="ctrl-grp"><div class="ctrl-lbl">Episode</div>
+            <input type="number" class="num-in" id="e-ml" value="1" min="1" /></div>
+        </div>
+        <button class="play-btn" onclick="playMovie('ml')">▶ Play</button>
+      </div>
+    </div>
+    <div class="now-bar" id="nb-ml">
+      <img class="np-img" id="npi-ml" src="" alt="" />
+      <div class="np-det"><div class="np-title" id="npt-ml"></div><div class="np-meta" id="npm-ml"></div></div>
+      <div class="np-star" id="nps-ml"></div>
+    </div>
+    <div class="player-outer" id="po-ml">
+      <div class="player-stage default" id="ps-ml">
+        <div class="iframe-wrap"><iframe class="vid-frame" id="vf-ml" allowfullscreen referrerpolicy="origin" allow="autoplay; fullscreen; encrypted-media"></iframe></div>
+      </div>
+      <div class="player-controls">
+        <div class="view-btns">
+          <button class="vbtn active" onclick="setView('ml','default',this)">Default</button>
+          <button class="vbtn" onclick="setView('ml','theatre',this)">Theatre</button>
+          <button class="vbtn" onclick="fsPlayer('ml')">⛶ Fullscreen</button>
+        </div>
+        <div class="server-wrap">
+          <span class="server-lbl">Server:</span>
+          <select class="server-select" id="srv-ml" onchange="changeServer('ml')"></select>
+          <button class="srv-health-btn" onclick="testAllServers('ml')">⚡ Test Servers</button>
+          <button class="srv-manage-btn" onclick="toggleSrvPanel('ml')">⚙ Manage</button>
+        </div>
+      </div>
+      <div class="srv-panel" id="srv-panel-ml">
+        <div class="srv-panel-title">Server Manager</div>
+        <div class="srv-list" id="srv-list-ml"></div>
+        <div class="add-srv-row">
+          <input class="add-srv-inp" id="add-srv-name-ml" placeholder="Server name" />
+          <input class="add-srv-inp" id="add-srv-movie-ml" placeholder="Movie URL (use {id})" />
+          <input class="add-srv-inp" id="add-srv-tv-ml" placeholder="TV URL (use {id},{s},{e})" />
+          <button class="add-srv-btn" onclick="addCustomServer('ml')">＋ Add</button>
+        </div>
+        <div class="srv-panel-actions" style="margin-top:12px;">
+          <button class="srv-act-btn" onclick="testAllServers('ml')">⚡ Test All Servers</button>
+          <button class="srv-act-btn secondary" onclick="resetServers('ml')">↺ Reset to Defaults</button>
+          <button class="srv-act-btn secondary" onclick="autoRemoveBroken('ml')">🗑 Remove Red Servers</button>
+        </div>
+      </div>
+    </div>
+    <div class="ein-helper">
+      <div class="section-label">🎬 Einthusan — Stream &amp; Download</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:6px;">Click below to search your selected movie on Einthusan, or paste a URL to download via SaveTheVideo.</p>
+      <div class="ein-links-row">
+        <a class="ein-browse-btn" id="ein-browse-ml" href="https://einthusan.tv/movie/results/?find=Popularity&lang=malayalam&ptype=view&tp=alltime" target="_blank">🌐 Search on Einthusan</a>
+      </div>
+      <div class="ein-helper-row" style="margin-top:12px;">
+        <input type="text" id="ein-url-ml" placeholder="https://einthusan.tv/movie/watch/…" />
+        <button class="ein-dl-btn" onclick="openSaveTheVideo('ml')">⬇ Get MP4</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== HINDI TAB ========== -->
+  <div class="tab-content" id="tab-hi">
+    <div class="sec-header">
+      <div class="sec-title">Recently Watched</div>
+      <button class="clear-btn" onclick="clearRecent('hi')">Clear</button>
+    </div>
+    <div id="recent-grid-hi"></div>
+    <div class="no-recent" id="no-recent-hi">Nothing watched yet.</div>
+    <div class="search-sec">
+      <div class="section-label">Search Hindi Movie or Series</div>
+      <div class="search-row">
+        <div class="srch-wrap">
+          <input type="text" id="srch-hi" placeholder="Type title…" autocomplete="off" />
+          <div id="sug-hi"></div>
+        </div>
+      </div>
+      <div class="ctrl-row">
+        <div class="series-ctrl" id="sc-hi">
+          <div class="ctrl-grp"><div class="ctrl-lbl">Season</div>
+            <input type="number" class="num-in" id="s-hi" value="1" min="1" /></div>
+          <div class="ctrl-grp"><div class="ctrl-lbl">Episode</div>
+            <input type="number" class="num-in" id="e-hi" value="1" min="1" /></div>
+        </div>
+        <button class="play-btn" onclick="playMovie('hi')">▶ Play</button>
+      </div>
+    </div>
+    <div class="now-bar" id="nb-hi">
+      <img class="np-img" id="npi-hi" src="" alt="" />
+      <div class="np-det"><div class="np-title" id="npt-hi"></div><div class="np-meta" id="npm-hi"></div></div>
+      <div class="np-star" id="nps-hi"></div>
+    </div>
+    <div class="player-outer" id="po-hi">
+      <div class="player-stage default" id="ps-hi">
+        <div class="iframe-wrap"><iframe class="vid-frame" id="vf-hi" allowfullscreen referrerpolicy="origin" allow="autoplay; fullscreen; encrypted-media"></iframe></div>
+      </div>
+      <div class="player-controls">
+        <div class="view-btns">
+          <button class="vbtn active" onclick="setView('hi','default',this)">Default</button>
+          <button class="vbtn" onclick="setView('hi','theatre',this)">Theatre</button>
+          <button class="vbtn" onclick="fsPlayer('hi')">⛶ Fullscreen</button>
+        </div>
+        <div class="server-wrap">
+          <span class="server-lbl">Server:</span>
+          <select class="server-select" id="srv-hi" onchange="changeServer('hi')"></select>
+          <button class="srv-health-btn" onclick="testAllServers('hi')">⚡ Test Servers</button>
+          <button class="srv-manage-btn" onclick="toggleSrvPanel('hi')">⚙ Manage</button>
+        </div>
+      </div>
+      <div class="srv-panel" id="srv-panel-hi">
+        <div class="srv-panel-title">Server Manager</div>
+        <div class="srv-list" id="srv-list-hi"></div>
+        <div class="add-srv-row">
+          <input class="add-srv-inp" id="add-srv-name-hi" placeholder="Server name" />
+          <input class="add-srv-inp" id="add-srv-movie-hi" placeholder="Movie URL (use {id})" />
+          <input class="add-srv-inp" id="add-srv-tv-hi" placeholder="TV URL (use {id},{s},{e})" />
+          <button class="add-srv-btn" onclick="addCustomServer('hi')">＋ Add</button>
+        </div>
+        <div class="srv-panel-actions" style="margin-top:12px;">
+          <button class="srv-act-btn" onclick="testAllServers('hi')">⚡ Test All Servers</button>
+          <button class="srv-act-btn secondary" onclick="resetServers('hi')">↺ Reset to Defaults</button>
+          <button class="srv-act-btn secondary" onclick="autoRemoveBroken('hi')">🗑 Remove Red Servers</button>
+        </div>
+      </div>
+    </div>
+    <div class="ein-helper">
+      <div class="section-label">🎬 Einthusan — Stream &amp; Download</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:6px;">Click below to search your selected movie on Einthusan, or paste a URL to download via SaveTheVideo.</p>
+      <div class="ein-links-row">
+        <a class="ein-browse-btn" id="ein-browse-hi" href="https://einthusan.tv/movie/results/?find=Popularity&lang=hindi&ptype=view&tp=alltime" target="_blank">🌐 Search on Einthusan</a>
+      </div>
+      <div class="ein-helper-row" style="margin-top:12px;">
+        <input type="text" id="ein-url-hi" placeholder="https://einthusan.tv/movie/watch/…" />
+        <button class="ein-dl-btn" onclick="openSaveTheVideo('hi')">⬇ Get MP4</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== TAMIL TAB ========== -->
+  <div class="tab-content" id="tab-ta">
+    <div class="sec-header">
+      <div class="sec-title">Recently Watched</div>
+      <button class="clear-btn" onclick="clearRecent('ta')">Clear</button>
+    </div>
+    <div id="recent-grid-ta"></div>
+    <div class="no-recent" id="no-recent-ta">Nothing watched yet.</div>
+    <div class="search-sec">
+      <div class="section-label">Search Tamil Movie or Series</div>
+      <div class="search-row">
+        <div class="srch-wrap">
+          <input type="text" id="srch-ta" placeholder="Type title…" autocomplete="off" />
+          <div id="sug-ta"></div>
+        </div>
+      </div>
+      <div class="ctrl-row">
+        <div class="series-ctrl" id="sc-ta">
+          <div class="ctrl-grp"><div class="ctrl-lbl">Season</div>
+            <input type="number" class="num-in" id="s-ta" value="1" min="1" /></div>
+          <div class="ctrl-grp"><div class="ctrl-lbl">Episode</div>
+            <input type="number" class="num-in" id="e-ta" value="1" min="1" /></div>
+        </div>
+        <button class="play-btn" onclick="playMovie('ta')">▶ Play</button>
+      </div>
+    </div>
+    <div class="now-bar" id="nb-ta">
+      <img class="np-img" id="npi-ta" src="" alt="" />
+      <div class="np-det"><div class="np-title" id="npt-ta"></div><div class="np-meta" id="npm-ta"></div></div>
+      <div class="np-star" id="nps-ta"></div>
+    </div>
+    <div class="player-outer" id="po-ta">
+      <div class="player-stage default" id="ps-ta">
+        <div class="iframe-wrap"><iframe class="vid-frame" id="vf-ta" allowfullscreen referrerpolicy="origin" allow="autoplay; fullscreen; encrypted-media"></iframe></div>
+      </div>
+      <div class="player-controls">
+        <div class="view-btns">
+          <button class="vbtn active" onclick="setView('ta','default',this)">Default</button>
+          <button class="vbtn" onclick="setView('ta','theatre',this)">Theatre</button>
+          <button class="vbtn" onclick="fsPlayer('ta')">⛶ Fullscreen</button>
+        </div>
+        <div class="server-wrap">
+          <span class="server-lbl">Server:</span>
+          <select class="server-select" id="srv-ta" onchange="changeServer('ta')"></select>
+          <button class="srv-health-btn" onclick="testAllServers('ta')">⚡ Test Servers</button>
+          <button class="srv-manage-btn" onclick="toggleSrvPanel('ta')">⚙ Manage</button>
+        </div>
+      </div>
+      <div class="srv-panel" id="srv-panel-ta">
+        <div class="srv-panel-title">Server Manager</div>
+        <div class="srv-list" id="srv-list-ta"></div>
+        <div class="add-srv-row">
+          <input class="add-srv-inp" id="add-srv-name-ta" placeholder="Server name" />
+          <input class="add-srv-inp" id="add-srv-movie-ta" placeholder="Movie URL (use {id})" />
+          <input class="add-srv-inp" id="add-srv-tv-ta" placeholder="TV URL (use {id},{s},{e})" />
+          <button class="add-srv-btn" onclick="addCustomServer('ta')">＋ Add</button>
+        </div>
+        <div class="srv-panel-actions" style="margin-top:12px;">
+          <button class="srv-act-btn" onclick="testAllServers('ta')">⚡ Test All Servers</button>
+          <button class="srv-act-btn secondary" onclick="resetServers('ta')">↺ Reset to Defaults</button>
+          <button class="srv-act-btn secondary" onclick="autoRemoveBroken('ta')">🗑 Remove Red Servers</button>
+        </div>
+      </div>
+    </div>
+    <div class="ein-helper">
+      <div class="section-label">🎬 Einthusan — Stream &amp; Download</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:6px;">Click below to search your selected movie on Einthusan, or paste a URL to download via SaveTheVideo.</p>
+      <div class="ein-links-row">
+        <a class="ein-browse-btn" id="ein-browse-ta" href="https://einthusan.tv/movie/results/?find=Popularity&lang=tamil&ptype=view&tp=alltime" target="_blank">🌐 Search on Einthusan</a>
+      </div>
+      <div class="ein-helper-row" style="margin-top:12px;">
+        <input type="text" id="ein-url-ta" placeholder="https://einthusan.tv/movie/watch/…" />
+        <button class="ein-dl-btn" onclick="openSaveTheVideo('ta')">⬇ Get MP4</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== YOUTUBE TAB ========== -->
+  <div class="tab-content" id="tab-yt">
+    <div class="sec-header">
+      <div class="sec-title">Recently Watched</div>
+      <button class="clear-btn" onclick="clearRecent('yt')">Clear</button>
+    </div>
+    <div id="recent-grid-yt"></div>
+    <div class="no-recent" id="no-recent-yt">No YouTube videos watched yet.</div>
+    <div class="search-sec">
+      <div class="section-label">Paste YouTube URL or Search (results load inline)</div>
+      <div class="yt-search-row">
+        <div class="yt-url-wrap">
+          <input type="text" id="yt-url" placeholder="Paste YouTube link or type to search…" autocomplete="off" />
+          <div id="sug-yt"></div>
+        </div>
+        <button class="yt-load-btn" onclick="loadYT()">▶ Load</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;">
+        Typing will show search suggestions you can click to play inline. Paste a URL directly and hit Load to skip search.
+      </div>
+    </div>
+    <div class="now-bar" id="nb-yt">
+      <img class="np-yt-img" id="npi-yt" src="" alt="" />
+      <div class="np-det"><div class="np-title" id="npt-yt"></div><div class="np-meta" id="npm-yt"></div></div>
+    </div>
+    <div class="player-outer" id="po-yt">
+      <div class="player-stage default" id="ps-yt">
+        <div class="iframe-wrap">
+          <iframe class="vid-frame" id="vf-yt"
+            allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen></iframe>
+        </div>
+      </div>
+      <div class="player-controls">
+        <div class="view-btns">
+          <button class="vbtn active" onclick="setView('yt','default',this)">Default</button>
+          <button class="vbtn" onclick="setView('yt','theatre',this)">Theatre</button>
+          <button class="vbtn" onclick="fsPlayer('yt')">⛶ Fullscreen</button>
+        </div>
+      </div>
+    </div>
+    <div class="converter-sec" id="conv-sec" style="display:none;">
+      <div class="section-label">🎵 MP3 / MP4 Converter &amp; Download</div>
+      <div class="conv-info">
+        <img class="conv-thumb" id="conv-thumb" src="" alt="" />
+        <div class="conv-det">
+          <div class="conv-title" id="conv-title">—</div>
+          <div class="conv-meta" id="conv-meta">Click a button below to convert &amp; download</div>
+        </div>
+      </div>
+      <div class="conv-actions">
+        <a class="conv-btn primary" id="conv-yout-btn" href="#" target="_blank">⬇ Download on yout.pw</a>
+        <button class="conv-btn" id="conv-copy-btn" onclick="copyYtLink()">🔗 Copy YouTube Link</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end .main -->
+
+<script>
+/* ================================================
+   GLOBAL STATE
+   ================================================ */
+let TMDB_KEY = 'a4b2a0c3db06c4c3e7d5d67c9be6240b';
+let currentUser = localStorage.getItem('sv_user') || 'Joel';
+let timers = {};
+let selMovie = { en:null, hi:null, ml:null, ta:null };
+let currentYtId = null;
+// Series info cache: tmdbId -> { totalSeasons, seasonEpCounts, status }
+let seriesInfoCache = {};
+
+/* ================================================
+   DEFAULT SERVER DEFINITIONS
+   ================================================ */
+const DEFAULT_SERVERS = {
+  videasy:    { label:'Videasy',    movie: id=>`https://player.videasy.net/movie/${id}`,            tv:(id,s,e)=>`https://player.videasy.net/tv/${id}/${s}/${e}`,                     tmdb:true },
+  vidfast:    { label:'VidFast',    movie: id=>`https://vidfast.pro/movie/${id}`,                   tv:(id,s,e)=>`https://vidfast.pro/tv/${id}/${s}/${e}`,                            tmdb:true },
+  vidlink:    { label:'VidLink',    movie: id=>`https://vidlink.pro/movie/${id}?autoplay=true`,     tv:(id,s,e)=>`https://vidlink.pro/tv/${id}/${s}/${e}?autoplay=true`,              tmdb:true },
+  vidsrcme:   { label:'VidSrc.me',  movie: id=>`https://vidsrc.me/embed/movie?imdb=${id}`,         tv:(id,s,e)=>`https://vidsrc.me/embed/tv?imdb=${id}&season=${s}&episode=${e}`,    tmdb:false },
+  vidsrcsu:   { label:'VidSrc.su',  movie: id=>`https://vidsrc.su/embed/movie/${id}`,              tv:(id,s,e)=>`https://vidsrc.su/embed/tv/${id}/${s}/${e}`,                        tmdb:true },
+  mappletv:   { label:'Mapple TV',  movie: id=>`https://mapple.tv/embed/movie/${id}`,              tv:(id,s,e)=>`https://mapple.tv/embed/tv/${id}/${s}/${e}`,                        tmdb:true },
+  multiembed: { label:'SuperEmbed', movie: id=>`https://multiembed.mov/?video_id=${id}&tmdb=1`,    tv:(id,s,e)=>`https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,       tmdb:true },
+  '2embed':   { label:'2Embed',     movie: id=>`https://www.2embed.stream/embed/movie/${id}`,      tv:(id,s,e)=>`https://www.2embed.stream/embed/tv/${id}/${s}/${e}`,                tmdb:false },
+  vsembed:    { label:'VSEmbed',    movie: id=>`https://vsembed.ru/embed/movie?imdb=${id}`,        tv:(id,s,e)=>`https://vsembed.ru/embed/tv?imdb=${id}&season=${s}&episode=${e}`,   tmdb:false }
+};
+
+/* ========== SERVER HEALTH ========== */
+let serverHealth = {};
+
+function getSrvConfig(lang) {
+  try { const r=localStorage.getItem(`sv_srvs_${lang}`); if(r) return JSON.parse(r); } catch(e){}
+  return buildDefaultSrvConfig();
+}
+function setSrvConfig(lang,cfg){ localStorage.setItem(`sv_srvs_${lang}`,JSON.stringify(cfg)); }
+function buildDefaultSrvConfig(){
+  return Object.entries(DEFAULT_SERVERS).map(([key,def])=>({key,label:def.label,movieTpl:null,tvTpl:null,tmdb:def.tmdb,hidden:false,custom:false}));
+}
+function getActiveSrvs(lang){ return getSrvConfig(lang).filter(s=>!s.hidden); }
+
+function copyYtLink(){
+  if(!currentYtId) return;
+  const url=`https://www.youtube.com/watch?v=${currentYtId}`;
+  navigator.clipboard.writeText(url).then(()=>{
+    const btn=document.getElementById('conv-copy-btn');
+    btn.textContent='✅ Copied!';
+    setTimeout(()=>btn.textContent='🔗 Copy YouTube Link',2000);
+  });
+}
+
+function buildUrlFromConfig(srv,m,isTV,s,ep){
+  const useId=srv.tmdb?m.tmdbId:(m.imdbId||m.tmdbId);
+  if(srv.custom&&srv.movieTpl){
+    if(isTV&&srv.tvTpl) return srv.tvTpl.replace('{id}',useId).replace('{s}',s).replace('{e}',ep);
+    return srv.movieTpl.replace('{id}',useId);
+  }
+  const def=DEFAULT_SERVERS[srv.key];
+  if(!def) return '';
+  return isTV?def.tv(useId,s,ep):def.movie(useId);
+}
+
+/* ========== SERVER HEALTH TESTING ========== */
+const SERVER_BASE_URLS={
+  mappletv:'https://mapple.tv', videasy:'https://player.videasy.net', vidfast:'https://vidfast.pro',
+  vidlink:'https://vidlink.pro', vidsrcme:'https://vidsrc.me', vidsrcsu:'https://vidsrc.su',
+  multiembed:'https://multiembed.mov', '2embed':'https://www.2embed.stream', vsembed:'https://vsembed.ru'
+};
+async function testServer(srvKey,customUrl){
+  const base=customUrl||SERVER_BASE_URLS[srvKey]; if(!base) return 'grey';
+  try {
+    const c=new AbortController(),t=setTimeout(()=>c.abort(),6000);
+    await fetch(base,{method:'HEAD',mode:'no-cors',signal:c.signal});
+    clearTimeout(t); return 'green';
+  } catch(e){ return e.name==='AbortError'?'yellow':'red'; }
+}
+function dotChar(s){ return s==='green'?'🟢':s==='yellow'?'🟡':s==='red'?'🔴':'⚫'; }
+function dotLabel(s){ return s==='green'?'Online':s==='yellow'?'Slow':s==='red'?'Offline':'Unknown'; }
+async function testAllServers(lang){
+  const cfg=getSrvConfig(lang); renderSrvList(lang);
+  const promises=cfg.map(async srv=>{
+    const customBase=srv.custom&&srv.movieTpl?new URL(srv.movieTpl.replace('{id}','1')).origin:null;
+    const status=await testServer(srv.key,customBase);
+    serverHealth[srv.key]=status; renderSrvSelect(lang); renderSrvList(lang);
+    return {key:srv.key,status};
+  });
+  await Promise.all(promises);
+}
+function renderSrvSelect(lang){
+  const sel=document.getElementById('srv-'+lang),active=getActiveSrvs(lang),cur=sel.value;
+  sel.innerHTML=active.map(srv=>`<option value="${srv.key}">${dotChar(serverHealth[srv.key]||'grey')} ${srv.label}</option>`).join('');
+  if(active.find(s=>s.key===cur)) sel.value=cur;
+}
+function renderSrvList(lang){
+  const cfg=getSrvConfig(lang),list=document.getElementById('srv-list-'+lang);
+  list.innerHTML=cfg.map((srv,idx)=>{
+    const h=serverHealth[srv.key]||'grey';
+    return `<div class="srv-row"><span class="srv-dot">${dotChar(h)}</span>
+      <span class="srv-name">${srv.label}${srv.custom?'<span style="font-size:10px;color:var(--muted);margin-left:5px;">[custom]</span>':''}</span>
+      <span class="srv-status-txt">${dotLabel(h)}</span>
+      <button class="srv-toggle ${srv.hidden?'hidden-srv':''}" onclick="toggleSrv('${lang}',${idx})">${srv.hidden?'Enable':'Disable'}</button>
+      ${srv.custom?`<button class="srv-toggle" style="color:#f07a7c;border-color:rgba(155,35,53,.4);" onclick="deleteSrv('${lang}',${idx})">✕</button>`:''}
+    </div>`;
+  }).join('');
+}
+function toggleSrvPanel(lang){ const p=document.getElementById('srv-panel-'+lang); p.classList.toggle('on'); if(p.classList.contains('on')) renderSrvList(lang); }
+function toggleSrv(lang,idx){ const cfg=getSrvConfig(lang); cfg[idx].hidden=!cfg[idx].hidden; setSrvConfig(lang,cfg); renderSrvList(lang); renderSrvSelect(lang); }
+function deleteSrv(lang,idx){ const cfg=getSrvConfig(lang); cfg.splice(idx,1); setSrvConfig(lang,cfg); renderSrvList(lang); renderSrvSelect(lang); }
+function resetServers(lang){ if(!confirm('Reset to default servers? Custom servers will be removed.')) return; localStorage.removeItem(`sv_srvs_${lang}`); renderSrvSelect(lang); renderSrvList(lang); }
+function autoRemoveBroken(lang){ const cfg=getSrvConfig(lang); let c=0; cfg.forEach(s=>{if(serverHealth[s.key]==='red'){s.hidden=true;c++;}}); setSrvConfig(lang,cfg); renderSrvList(lang); renderSrvSelect(lang); alert(`Disabled ${c} offline server(s). You can re-enable them anytime.`); }
+function addCustomServer(lang){
+  const name=document.getElementById(`add-srv-name-${lang}`).value.trim(),
+        movie=document.getElementById(`add-srv-movie-${lang}`).value.trim(),
+        tv=document.getElementById(`add-srv-tv-${lang}`).value.trim();
+  if(!name||!movie){alert('Server name and movie URL template are required.');return;}
+  const key='custom_'+Date.now(),cfg=getSrvConfig(lang);
+  cfg.push({key,label:name,movieTpl:movie,tvTpl:tv||null,tmdb:true,hidden:false,custom:true});
+  setSrvConfig(lang,cfg);
+  document.getElementById(`add-srv-name-${lang}`).value='';
+  document.getElementById(`add-srv-movie-${lang}`).value='';
+  document.getElementById(`add-srv-tv-${lang}`).value='';
+  renderSrvList(lang); renderSrvSelect(lang);
+}
+function buildSrc(lang,m,isTV,s,ep){
+  const srvKey=document.getElementById('srv-'+lang).value,cfg=getSrvConfig(lang),srv=cfg.find(x=>x.key===srvKey);
+  if(!srv) return '';
+  return buildUrlFromConfig(srv,m,isTV,s,ep);
+}
+
+/* ================================================
+   SERIES INFO PANEL (EN TAB)
+   ================================================ */
+async function loadSeriesInfo(tmdbId, currentSeason, currentEp) {
+  const panel = document.getElementById('sip-en');
+  const loading = document.getElementById('sip-loading-en');
+  const content = document.getElementById('sip-content-en');
+  panel.classList.add('on');
+  loading.style.display = 'flex';
+  content.style.display = 'none';
+
+  try {
+    let info = seriesInfoCache[tmdbId];
+    if (!info) {
+      // Fetch show details
+      const showData = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}?api_key=${TMDB_KEY}`).then(r => r.json());
+      // Fetch all season episode counts
+      const seasonEpCounts = {};
+      const totalSeasons = showData.number_of_seasons || 0;
+      if (showData.seasons) {
+        showData.seasons.forEach(s => {
+          if (s.season_number > 0) seasonEpCounts[s.season_number] = s.episode_count;
+        });
+      }
+      info = {
+        totalSeasons,
+        seasonEpCounts,
+        status: showData.status || '—',
+        totalEpisodes: showData.number_of_episodes || 0
+      };
+      seriesInfoCache[tmdbId] = info;
+    }
+
+    const epInSeason = info.seasonEpCounts[currentSeason] || '?';
+
+    document.getElementById('sip-seasons-en').textContent = info.totalSeasons;
+    document.getElementById('sip-seasons-sub-en').textContent = `${info.totalEpisodes} total episodes`;
+    document.getElementById('sip-eps-en').textContent = epInSeason;
+    document.getElementById('sip-eps-sub-en').textContent = `Season ${currentSeason}`;
+    const statusEl = document.getElementById('sip-status-en');
+    statusEl.textContent = info.status;
+    const statusSub = document.getElementById('sip-status-sub-en');
+    if (info.status === 'Ended' || info.status === 'Canceled') {
+      statusEl.style.color = '#f07a7c';
+      statusSub.textContent = 'No new episodes';
+    } else if (info.status === 'Returning Series') {
+      statusEl.style.color = '#4caf82';
+      statusSub.textContent = 'Still airing';
+    } else {
+      statusEl.style.color = 'var(--gold2)';
+      statusSub.textContent = '';
+    }
+
+    // Progress bar
+    const prog = typeof epInSeason === 'number' ? Math.round((currentEp / epInSeason) * 100) : 0;
+    document.getElementById('sip-bar-en').style.width = Math.min(prog, 100) + '%';
+    document.getElementById('sip-prog-label-en').textContent = `Ep ${currentEp} of ${epInSeason}`;
+    updateEpNavBar('en');
+
+    // Last watched + timestamp
+    await updateLastWatched(tmdbId, currentSeason, currentEp);
+
+    loading.style.display = 'none';
+    content.style.display = 'block';
+  } catch(e) {
+    loading.innerHTML = '<span style="color:#f07a7c;font-size:12px;">Could not load series info.</span>';
+  }
+}
+
+async function updateLastWatched(tmdbId, currentSeason, currentEp) {
+  const saved = await getSavedTimestamp(tmdbId);
+  const lwText = document.getElementById('lw-text-en');
+  if (!lwText) return;
+
+  if (saved) {
+    lwText.innerHTML = `S${saved.season} E${saved.ep}<span style="color:var(--muted);margin-left:6px;font-size:11px;">stopped at</span> <strong style="color:var(--gold);">${saved.ts}</strong>`;
+  } else {
+    lwText.innerHTML = `S${currentSeason} E${currentEp} <span style="color:var(--muted);font-size:11px;">(current)</span>`;
+  }
+
+  const tsInput = document.getElementById('ts-input-en');
+  if (saved && saved.season == currentSeason && saved.ep == currentEp) {
+    tsInput.value = saved.ts;
+  } else {
+    tsInput.value = '';
+  }
+}
+
+function getTsKey(tmdbId) { return `sv_ts_${currentUser}_en_${tmdbId}`; }
+
+
+function onSeasonChange() {
+  const m = selMovie['en'];
+  if (!m || m.type !== 'tv') return;
+  const s = parseInt(document.getElementById('s-en').value) || 1;
+  const ep = parseInt(document.getElementById('e-en').value) || 1;
+  // Update episode count for new season
+  loadSeriesInfo(m.tmdbId, s, ep);
+}
+
+/* ================================================
+   INIT
+   ================================================ */
+document.getElementById('api-banner').classList.add('hidden');
+initUsers();
+renderAllRecents();
+initIntro();
+initSearch('en'); initSearch('hi'); initSearch('ml'); initSearch('ta');
+initYTSearch();
+
+['en','hi','ml','ta'].forEach(lang => {
+  const raw = localStorage.getItem(`sv_srvs_${lang}`);
+  if (raw) {
+    try {
+      const old = JSON.parse(raw);
+      const validKeys = new Set(Object.keys(DEFAULT_SERVERS));
+      const kept = old.filter(s => validKeys.has(s.key) || s.custom);
+      const existingKeys = new Set(kept.map(s => s.key));
+      Object.entries(DEFAULT_SERVERS).forEach(([key,def]) => {
+        if (!existingKeys.has(key)) kept.unshift({key,label:def.label,movieTpl:null,tvTpl:null,tmdb:def.tmdb,hidden:false,custom:false});
+      });
+      setSrvConfig(lang, kept);
+    } catch(e) { localStorage.removeItem(`sv_srvs_${lang}`); }
+  }
+  renderSrvSelect(lang);
+});
+
+/* ================================================
+   INTRO
+   ================================================ */
+function initIntro(){
+  setTimeout(()=>{
+    document.getElementById('intro').classList.add('open');
+    setTimeout(()=>{
+      document.getElementById('intro').classList.add('fade-out');
+      setTimeout(()=>document.getElementById('intro').style.display='none',900);
+    },1600);
+  },900);
+}
+
+/* ================================================
+   TABS
+   ================================================ */
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('active',el.dataset.tab===t));
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.toggle('active',el.id==='tab-'+t));
+}
+
+/* ================================================
+   API KEY
+   ================================================ */
+function saveKey(){
+  const v=document.getElementById('api-key-input').value.trim();
+  if(!v) return;
+  TMDB_KEY=v; localStorage.setItem('tmdb_key',v);
+  document.getElementById('api-banner').classList.add('hidden');
+}
+
+/* ================================================
+   USERS
+   ================================================ */
+function getUsers(){ try{return JSON.parse(localStorage.getItem('sv_users')||'["Joel"]');}catch{return['Joel'];} }
+function setUsers(a){ localStorage.setItem('sv_users',JSON.stringify(a)); }
+function initUsers(){
+  let users=getUsers();
+  if(!users.includes(currentUser)){users.push(currentUser);setUsers(users);}
+  renderUserHeader(); renderUserDropdown();
+}
+function renderUserHeader(){
+  document.getElementById('user-name-hdr').textContent=currentUser;
+  document.getElementById('user-avatar-hdr').textContent=currentUser.charAt(0).toUpperCase();
+}
+function renderUserDropdown(){
+  const users=getUsers(),list=document.getElementById('ud-users-list');
+  list.innerHTML=users.map(u=>`
+    <div class="ud-user ${u===currentUser?'active':''}" onclick="switchUser('${u}')">
+      <div class="user-avatar">${u.charAt(0).toUpperCase()}</div>
+      <div class="ud-name">${u}</div>
+      ${users.length>1?`<span style="margin-left:auto;font-size:11px;color:var(--muted);cursor:pointer;" onclick="event.stopPropagation();deleteUser('${u}')">✕</span>`:''}
+    </div>`).join('');
+}
+function switchUser(name){
+  currentUser=name; localStorage.setItem('sv_user',name);
+  renderUserHeader(); renderUserDropdown(); renderAllRecents();
+  document.getElementById('user-dropdown').style.display='none';
+  setTimeout(()=>document.getElementById('user-dropdown').style.display='',200);
+}
+function toggleAddUser(){
+  const inp=document.getElementById('new-user-input'),btn=document.getElementById('new-user-btn');
+  inp.classList.toggle('on'); btn.classList.toggle('on');
+  if(inp.classList.contains('on')) inp.focus();
+}
+function createUser(){
+  const name=document.getElementById('new-user-input').value.trim(); if(!name) return;
+  const users=getUsers(); if(!users.includes(name)){users.push(name);setUsers(users);}
+  document.getElementById('new-user-input').value='';
+  document.getElementById('new-user-input').classList.remove('on');
+  document.getElementById('new-user-btn').classList.remove('on');
+  switchUser(name);
+}
+function deleteUser(name){
+  if(name===currentUser){alert("Can't delete current user.");return;}
+  const users=getUsers().filter(u=>u!==name); setUsers(users);
+  ['en','hi','ml','ta','yt'].forEach(l=>localStorage.removeItem(`sv_r_${name}_${l}`));
+  renderUserDropdown();
+}
+
+/* ================================================
+   SEARCH
+   ================================================ */
+function initSearch(lang){
+  const inp=document.getElementById('srch-'+lang),box=document.getElementById('sug-'+lang);
+  inp.addEventListener('input',()=>{
+    clearTimeout(timers[lang]);
+    const q=inp.value.trim();
+    if(q.length<2){box.innerHTML='';return;}
+    timers[lang]=setTimeout(()=>doSearch(q,lang),350);
+  });
+  document.addEventListener('click',e=>{
+    if(!e.target.closest(`#srch-${lang}`)&&!e.target.closest(`#sug-${lang}`)) box.innerHTML='';
+  });
+}
+
+async function doSearch(q,lang){
+  const box=document.getElementById('sug-'+lang);
+  if(!TMDB_KEY){box.innerHTML='<div class="sug-item" style="color:#f07a7c;font-size:12px;">Add TMDB key first.</div>';return;}
+  box.innerHTML='<div class="sug-item"><span class="spinner"></span><span style="font-size:12px;color:var(--muted);">Searching…</span></div>';
+  try {
+    const d=await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}`).then(r=>r.json());
+    const items=(d.results||[]).filter(x=>x.media_type==='movie'||x.media_type==='tv').slice(0,9);
+    if(!items.length){box.innerHTML='<div class="sug-item" style="color:var(--muted);font-size:12px;">No results.</div>';return;}
+    box.innerHTML='';
+    items.forEach(item=>{
+      const isM=item.media_type==='movie',title=item.title||item.name;
+      const year=(item.release_date||item.first_air_date||'').slice(0,4);
+      const poster=item.poster_path?`https://image.tmdb.org/t/p/w92${item.poster_path}`:'';
+      const el=document.createElement('div'); el.className='sug-item';
+      el.innerHTML=(poster?`<img class="sug-poster" src="${poster}" alt="" loading="lazy"/>`:
+        `<div class="sug-no-img">🎬</div>`)+
+        `<div class="sug-info"><div class="sug-title">${title}</div>
+        <div class="sug-meta">${year}${item.original_language?' · '+item.original_language.toUpperCase():''}</div></div>
+        <span class="sug-badge ${isM?'badge-movie':'badge-series'}">${isM?'Movie':'Series'}</span>`;
+      el.onclick=()=>pickMovie(item,lang);
+      box.appendChild(el);
+    });
+  } catch(err){
+    box.innerHTML='<div class="sug-item" style="color:#f07a7c;font-size:12px;">Error — check TMDB key.</div>';
+  }
+}
+
+async function pickMovie(item,lang){
+  document.getElementById('sug-'+lang).innerHTML='';
+  const title=item.title||item.name;
+  document.getElementById('srch-'+lang).value=title;
+  let imdbId='';
+  try{
+    const type=item.media_type==='movie'?'movie':'tv';
+    const ext=await fetch(`https://api.themoviedb.org/3/${type}/${item.id}/external_ids?api_key=${TMDB_KEY}`).then(r=>r.json());
+    imdbId=ext.imdb_id||'';
+  }catch(e){}
+  selMovie[lang]={
+    title,tmdbId:String(item.id),imdbId,type:item.media_type,
+    year:(item.release_date||item.first_air_date||'').slice(0,4),
+    poster:item.poster_path?`https://image.tmdb.org/t/p/w185${item.poster_path}`:'',
+    rating:item.vote_average?item.vote_average.toFixed(1):'',
+    origLang:item.original_language||''
+  };
+  const isTV = item.media_type==='tv';
+  document.getElementById('sc-'+lang).classList.toggle('on', isTV);
+
+  // For English TV: load series info
+  if (lang === 'en' && isTV) {
+    const s = parseInt(document.getElementById('s-en').value) || 1;
+    const ep = parseInt(document.getElementById('e-en').value) || 1;
+    loadSeriesInfo(String(item.id), s, ep);
+  } else if (lang === 'en') {
+    // Hide panel for movies
+    document.getElementById('sip-en').classList.remove('on');
+  }
+
+  updateEinthusan(lang, title);
+}
+
+/* ================================================
+   PLAY MOVIE
+   ================================================ */
+function playMovie(lang){
+  const m=selMovie[lang];
+  if(!m){alert('Search for and select a title first.');return;}
+  const isTV=m.type==='tv';
+  const s=document.getElementById('s-'+lang).value||1;
+  const ep=document.getElementById('e-'+lang).value||1;
+  const src=buildSrc(lang,m,isTV,s,ep);
+  document.getElementById('vf-'+lang).src=src;
+  document.getElementById('po-'+lang).classList.add('on');
+  const langLabels={en:'English',hi:'Hindi',ml:'Malayalam',ta:'Tamil'};
+  document.getElementById('nb-'+lang).classList.add('on');
+  document.getElementById('npi-'+lang).src=m.poster||'';
+  document.getElementById('npi-'+lang).style.display=m.poster?'block':'none';
+  document.getElementById('npt-'+lang).textContent=m.title;
+  document.getElementById('npm-'+lang).innerHTML=
+    `<span class="np-pill ${isTV?'pill-series':'pill-movie'}">${isTV?'Series':'Movie'}</span>`+
+    `<span style="color:var(--muted);font-size:11px;">${langLabels[lang]}</span>`+
+    ` ${m.year||''}${isTV?` &nbsp;·&nbsp; S${s} E${ep}`:''}`;
+  document.getElementById('nps-'+lang).innerHTML=m.rating?`⭐ ${m.rating}`:'';
+
+  // For English TV: refresh series panel with current season/ep
+  if (lang === 'en' && isTV) {
+    loadSeriesInfo(m.tmdbId, parseInt(s), parseInt(ep));
+  }
+
+  addRecent(lang,{...m,epInfo:isTV?{s,ep}:null});
+  if (lang === 'en') updateEpNavBar(lang);
+  setTimeout(()=>document.getElementById('po-'+lang).scrollIntoView({behavior:'smooth',block:'start'}),120);
+}
+
+function changeServer(lang){
+  const m=selMovie[lang]; if(!m) return;
+  const isTV=m.type==='tv';
+  const s=document.getElementById('s-'+lang).value||1;
+  const ep=document.getElementById('e-'+lang).value||1;
+  document.getElementById('vf-'+lang).src=buildSrc(lang,m,isTV,s,ep);
+}
+
+/* ================================================
+   NEXT / PREVIOUS EPISODE NAVIGATION (EN tab)
+   ================================================ */
+function updateEpNavBar(lang) {
+  if (lang !== 'en') return;
+  const m = selMovie[lang];
+  const bar = document.getElementById('ep-nav-en');
+  if (!m || m.type !== 'tv') { bar.classList.remove('on'); return; }
+  bar.classList.add('on');
+  const s = parseInt(document.getElementById('s-en').value) || 1;
+  const ep = parseInt(document.getElementById('e-en').value) || 1;
+  const info = seriesInfoCache[m.tmdbId];
+  const epInSeason = info ? (info.seasonEpCounts[s] || 0) : 0;
+  const totalSeasons = info ? info.totalSeasons : 99;
+
+  const prevBtn = document.getElementById('prev-ep-en');
+  const nextBtn = document.getElementById('next-ep-en');
+  const infoEl = document.getElementById('ep-nav-info-en');
+
+  // Disable prev on S1E1
+  prevBtn.disabled = (s === 1 && ep === 1);
+  // Disable next on last episode of last season
+  nextBtn.disabled = (ep >= epInSeason && s >= totalSeasons) && epInSeason > 0;
+  infoEl.textContent = `S${s} · E${ep}`;
+}
+
+function navEpisode(lang, dir) {
+  const m = selMovie[lang]; if (!m || m.type !== 'tv') return;
+  let s = parseInt(document.getElementById('s-'+lang).value) || 1;
+  let ep = parseInt(document.getElementById('e-'+lang).value) || 1;
+  const info = seriesInfoCache[m.tmdbId];
+  const epInSeason = info ? (info.seasonEpCounts[s] || 1) : 1;
+  const totalSeasons = info ? info.totalSeasons : 99;
+
+  if (dir === 1) { // Next
+    if (ep < epInSeason) {
+      ep++;
+    } else if (s < totalSeasons) {
+      s++; ep = 1;
+    }
+  } else { // Previous
+    if (ep > 1) {
+      ep--;
+    } else if (s > 1) {
+      s--;
+      // Go to last ep of previous season
+      const prevEps = info ? (info.seasonEpCounts[s] || 1) : 1;
+      ep = prevEps;
+    }
+  }
+  document.getElementById('s-'+lang).value = s;
+  document.getElementById('e-'+lang).value = ep;
+  playMovie(lang);
+}
+
+/* ================================================
+   EINTHUSAN
+   ================================================ */
+function updateEinthusan(lang, title) {
+  const el = document.getElementById('ein-browse-'+lang);
+  if (!el) return;
+  const langMap = { ml:'malayalam', hi:'hindi', ta:'tamil' };
+  const l = langMap[lang] || lang;
+  el.href = `https://einthusan.tv/movie/results/?lang=${l}&query=${encodeURIComponent(title)}`;
+}
+
+function openSaveTheVideo(lang){
+  const url=document.getElementById('ein-url-'+lang).value.trim();
+  if(!url){alert('Paste an Einthusan movie URL first.');return;}
+  window.open(`https://www.savethevideo.com/home?url=${encodeURIComponent(url)}`,'_blank');
+}
+
+/* ================================================
+   VIEW MODES & FULLSCREEN
+   ================================================ */
+function setView(lang,mode,btn){
+  const ps=document.getElementById('ps-'+lang);
+  ps.className='player-stage '+mode;
+  btn.closest('.view-btns').querySelectorAll('.vbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function fsPlayer(lang){
+  const iframe=document.getElementById('vf-'+lang);
+  if(iframe.requestFullscreen) iframe.requestFullscreen();
+  else if(iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+}
+
+/* ================================================
+   YOUTUBE
+   ================================================ */
+function initYTSearch(){
+  const inp=document.getElementById('yt-url'),box=document.getElementById('sug-yt');
+  inp.addEventListener('input',()=>{
+    clearTimeout(timers.yt);
+    const q=inp.value.trim();
+    if(!q||q.startsWith('http')||q.includes('youtu')){box.innerHTML='';return;}
+    timers.yt=setTimeout(()=>ytSearch(q),400);
+  });
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter') loadYT();});
+  document.addEventListener('click',e=>{if(!e.target.closest('#yt-url')&&!e.target.closest('#sug-yt')) box.innerHTML='';});
+}
+function extractYtId(url){
+  const m=url.match(/(?:youtu\.be\/|[?&]v=|embed\/|shorts\/)([A-Za-z0-9_-]{11})/);
+  return m?m[1]:null;
+}
+async function ytSearch(q){
+  const box=document.getElementById('sug-yt');
+  box.innerHTML='<div class="sug-item"><span class="spinner"></span><span style="font-size:12px;color:var(--muted);">Searching YouTube…</span></div>';
+  const instances=['https://inv.nadeko.net','https://invidious.privacydev.net','https://iv.melmac.space'];
+  let results=null;
+  for(const inst of instances){
+    try{
+      const data=await fetch(`${inst}/api/v1/search?q=${encodeURIComponent(q)}&type=video&fields=videoId,title,author,publishedText,viewCount,lengthSeconds,videoThumbnails`,{signal:AbortSignal.timeout(4000)}).then(r=>r.json());
+      if(Array.isArray(data)&&data.length){results=data.slice(0,8);break;}
+    }catch(e){}
+  }
+  if(!results){box.innerHTML=`<div class="sug-item" style="color:var(--muted);font-size:12px;">Couldn't reach search — paste a YouTube URL directly above and hit Load.</div>`;return;}
+  box.innerHTML='';
+  results.forEach(v=>{
+    const thumb=v.videoThumbnails?.find(t=>t.quality==='medium')?.url||v.videoThumbnails?.[0]?.url||`https://img.youtube.com/vi/${v.videoId}/mqdefault.jpg`;
+    const duration=v.lengthSeconds?fmtSeconds(v.lengthSeconds):'';
+    const el=document.createElement('div'); el.className='sug-item';
+    el.innerHTML=`<img class="sug-thumb" src="${thumb}" alt="" loading="lazy" onerror="this.style.display='none'" />
+      <div class="sug-info"><div class="sug-title">${escHtml(v.title)}</div>
+      <div class="sug-meta">${escHtml(v.author||'')}${duration?' · '+duration:''}</div></div>
+      <span class="sug-badge badge-yt">YT</span>`;
+    el.onclick=()=>playYtVideo(v.videoId,v.title,v.author,thumb);
+    box.appendChild(el);
+  });
+}
+function fmtSeconds(s){const m=Math.floor(s/60),sec=s%60;return m+':'+(sec<10?'0':'')+sec;}
+function escHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function playYtVideo(vid,title,author,thumb){
+  document.getElementById('sug-yt').innerHTML='';
+  document.getElementById('yt-url').value=`https://www.youtube.com/watch?v=${vid}`;
+  currentYtId=vid;
+  document.getElementById('vf-yt').src=`https://www.youtube.com/embed/${vid}?autoplay=1&rel=0`;
+  document.getElementById('po-yt').classList.add('on');
+  const safeTitle=title||('YouTube Video — '+vid);
+  document.getElementById('nb-yt').classList.add('on');
+  document.getElementById('npi-yt').src=thumb||`https://img.youtube.com/vi/${vid}/hqdefault.jpg`;
+  document.getElementById('npt-yt').textContent=safeTitle;
+  document.getElementById('npm-yt').textContent=author||vid;
+  showConverter(vid,thumb||`https://img.youtube.com/vi/${vid}/hqdefault.jpg`,safeTitle);
+  addRecent('yt',{title:safeTitle,tmdbId:vid,imdbId:vid,type:'yt',
+    poster:thumb||`https://img.youtube.com/vi/${vid}/hqdefault.jpg`,year:'',rating:'',origLang:'',ytId:vid});
+  setTimeout(()=>document.getElementById('po-yt').scrollIntoView({behavior:'smooth',block:'start'}),120);
+}
+function loadYT(){
+  const val=document.getElementById('yt-url').value.trim();
+  document.getElementById('sug-yt').innerHTML='';
+  if(!val) return;
+  if(!val.startsWith('http')&&!val.includes('youtu')){ytSearch(val);return;}
+  const vid=extractYtId(val);
+  if(!vid){alert('Could not detect a YouTube video ID from that URL.');return;}
+  const thumb=`https://img.youtube.com/vi/${vid}/hqdefault.jpg`;
+  playYtVideo(vid,'YouTube Video — '+vid,vid,thumb);
+}
+
+/* ================================================
+   CONVERTER
+   ================================================ */
+function showConverter(vid,thumb,title){
+  const sec=document.getElementById('conv-sec'); sec.style.display='block';
+  document.getElementById('conv-thumb').src=thumb;
+  document.getElementById('conv-title').textContent=title||('YouTube Video — '+vid);
+  document.getElementById('conv-meta').textContent='Click a button below to convert & download';
+  document.getElementById('conv-yout-btn').href=`https://yout.pw/?url=${encodeURIComponent('https://www.youtube.com/watch?v='+vid)}`;
+}
+
+/* ================================================
+   CLOUD SYNC — uses window.storage (persistent artifact storage)
+   Falls back to localStorage if storage unavailable.
+   Key scheme: "recent__{user}__{lang}" and "ts__{user}__en__{tmdbId}"
+   ================================================ */
+
+async function cloudGet(key) {
+  try {
+    const r = await window.storage.get(key, false);
+    return r ? JSON.parse(r.value) : null;
+  } catch(e) { return null; }
+}
+
+async function cloudSet(key, val) {
+  try {
+    await window.storage.set(key, JSON.stringify(val), false);
+  } catch(e) {}
+}
+
+async function cloudDelete(key) {
+  try { await window.storage.delete(key, false); } catch(e) {}
+}
+
+function syncKey(lang) { return `recent__${currentUser}__${lang}`; }
+function tsCloudKey(tmdbId) { return `ts__${currentUser}__en__${tmdbId}`; }
+
+// Local cache so UI is instant even before cloud responds
+function rKey(lang){return `sv_r_${currentUser}_${lang}`;}
+function getR(lang){try{return JSON.parse(localStorage.getItem(rKey(lang))||'[]');}catch{return[];}}
+function setRLocal(lang,a){localStorage.setItem(rKey(lang),JSON.stringify(a));}
+
+function setSyncStatus(lang, status) {
+  if (lang !== 'en') return;
+  const dot = document.getElementById('sync-dot-en');
+  const pulse = document.getElementById('sync-pulse-en');
+  const label = document.getElementById('sync-label-en');
+  if (!dot) return;
+  dot.className = 'sync-dot ' + status;
+  pulse.className = 'sync-pulse' + (status === 'syncing' ? ' anim' : '');
+  label.textContent = status === 'synced' ? 'synced' : status === 'syncing' ? 'syncing…' : status === 'error' ? 'offline' : '…';
+}
+
+async function loadFromCloud(lang) {
+  setSyncStatus(lang, 'syncing');
+  try {
+    const cloud = await cloudGet(syncKey(lang));
+    if (cloud && Array.isArray(cloud)) {
+      // Merge: take cloud data, but keep any local items newer than cloud's newest
+      const local = getR(lang);
+      const cloudNewest = cloud[0]?.ts || 0;
+      const localNewer = local.filter(x => (x.ts||0) > cloudNewest);
+      let merged = [...localNewer, ...cloud];
+      // Deduplicate by tmdbId
+      const seen = new Set();
+      merged = merged.filter(x => {
+        const k = x.tmdbId + '_' + x.type;
+        if (seen.has(k)) return false;
+        seen.add(k); return true;
+      });
+      merged = merged.slice(0, 24);
+      setRLocal(lang, merged);
+      if (localNewer.length) await cloudSet(syncKey(lang), merged); // push merged back
+    } else {
+      // No cloud data — push local up
+      const local = getR(lang);
+      if (local.length) await cloudSet(syncKey(lang), local);
+    }
+    setSyncStatus(lang, 'synced');
+  } catch(e) {
+    setSyncStatus(lang, 'error');
+  }
+  renderRecent(lang);
+  renderContinueWatching(lang);
+}
+
+async function addRecent(lang, movie) {
+  let a = getR(lang).filter(x => !(x.tmdbId === movie.tmdbId && x.type === movie.type));
+  a.unshift({...movie, ts: Date.now()});
+  if (a.length > 24) a = a.slice(0, 24);
+  setRLocal(lang, a);
+  renderRecent(lang);
+  renderContinueWatching(lang);
+  // Push to cloud async
+  setSyncStatus(lang, 'syncing');
+  try {
+    await cloudSet(syncKey(lang), a);
+    setSyncStatus(lang, 'synced');
+  } catch(e) { setSyncStatus(lang, 'error'); }
+}
+
+async function rmR(e, lang, idx) {
+  e.stopPropagation();
+  const a = getR(lang);
+  a.splice(idx, 1);
+  setRLocal(lang, a);
+  renderRecent(lang);
+  renderContinueWatching(lang);
+  setSyncStatus(lang, 'syncing');
+  try { await cloudSet(syncKey(lang), a); setSyncStatus(lang, 'synced'); }
+  catch(e) { setSyncStatus(lang, 'error'); }
+}
+
+async function clearRecent(lang) {
+  if (!confirm('Clear all recently watched for this tab?')) return;
+  setRLocal(lang, []);
+  renderRecent(lang);
+  renderContinueWatching(lang);
+  try { await cloudDelete(syncKey(lang)); } catch(e){}
+  setSyncStatus(lang, 'synced');
+}
+
+/* ================================================
+   TIMESTAMP CLOUD SYNC
+   ================================================ */
+async function saveTimestamp(lang) {
+  const m = selMovie[lang];
+  if (!m || m.type !== 'tv') return;
+  const ts = document.getElementById('ts-input-en').value.trim();
+  if (!ts) { alert('Enter a timestamp, e.g. 24:15'); return; }
+  const s = document.getElementById('s-en').value;
+  const ep = document.getElementById('e-en').value;
+  const data = { season: parseInt(s), ep: parseInt(ep), ts, saved: Date.now() };
+  // Save locally
+  localStorage.setItem(getTsKey(m.tmdbId), JSON.stringify(data));
+  // Save to cloud
+  try { await cloudSet(tsCloudKey(m.tmdbId), data); } catch(e) {}
+  await updateLastWatched(m.tmdbId, s, ep);
+  renderContinueWatching('en');
+  const flash = document.getElementById('ts-flash-en');
+  flash.classList.add('on');
+  setTimeout(() => flash.classList.remove('on'), 2000);
+}
+
+async function clearTimestamp(lang) {
+  const m = selMovie[lang];
+  if (!m) return;
+  localStorage.removeItem(getTsKey(m.tmdbId));
+  try { await cloudDelete(tsCloudKey(m.tmdbId)); } catch(e) {}
+  document.getElementById('ts-input-en').value = '';
+  const s = document.getElementById('s-en').value;
+  const ep = document.getElementById('e-en').value;
+  await updateLastWatched(m.tmdbId, s, ep);
+  renderContinueWatching('en');
+}
+
+async function getSavedTimestamp(tmdbId) {
+  // Try cloud first, fall back to local
+  try {
+    const cloud = await cloudGet(tsCloudKey(tmdbId));
+    if (cloud) {
+      localStorage.setItem(getTsKey(tmdbId), JSON.stringify(cloud));
+      return cloud;
+    }
+  } catch(e) {}
+  try { return JSON.parse(localStorage.getItem(getTsKey(tmdbId))); } catch { return null; }
+}
+
+/* ================================================
+   CONTINUE WATCHING CARD
+   ================================================ */
+function renderContinueWatching(lang) {
+  if (lang !== 'en') return;
+  const card = document.getElementById('cw-card-en');
+  if (!card) return;
+  const recent = getR('en');
+  if (!recent.length) {
+    card.className = 'cw-card empty';
+    document.getElementById('cw-title-en').textContent = 'Nothing yet';
+    document.getElementById('cw-meta-en').textContent = 'Watch something to continue here';
+    document.getElementById('cw-ts-en').textContent = '';
+    document.getElementById('cw-poster-en').style.display = 'none';
+    document.getElementById('cw-play-en').style.display = 'none';
+    return;
+  }
+  const m = recent[0];
+  card.className = 'cw-card';
+  document.getElementById('cw-title-en').textContent = m.title;
+  const isTV = m.type === 'tv';
+  let meta = m.year || '';
+  if (isTV && m.epInfo) meta += ` · S${m.epInfo.s} E${m.epInfo.ep}`;
+  document.getElementById('cw-meta-en').textContent = meta || (isTV ? 'Series' : 'Movie');
+  // Timestamp
+  const tsData = (() => { try { return JSON.parse(localStorage.getItem(getTsKey(m.tmdbId))); } catch { return null; } })();
+  document.getElementById('cw-ts-en').textContent = tsData ? `⏱ Stopped at ${tsData.ts}` : '';
+  if (m.poster) {
+    const img = document.getElementById('cw-poster-en');
+    img.src = m.poster;
+    img.style.display = 'block';
+  } else {
+    document.getElementById('cw-poster-en').style.display = 'none';
+  }
+  document.getElementById('cw-play-en').style.display = 'block';
+}
+
+function cwResume(lang) {
+  const recent = getR(lang);
+  if (!recent.length) return;
+  const m = recent[0];
+  if (lang === 'yt') {
+    switchTab('yt');
+    const thumb = m.poster || `https://img.youtube.com/vi/${m.ytId||m.tmdbId}/hqdefault.jpg`;
+    playYtVideo(m.ytId||m.tmdbId, m.title, '', thumb);
+  } else {
+    selMovie[lang] = m;
+    document.getElementById('srch-'+lang).value = m.title;
+    if (m.type === 'tv' && m.epInfo) {
+      document.getElementById('sc-'+lang).classList.add('on');
+      document.getElementById('s-'+lang).value = m.epInfo.s;
+      document.getElementById('e-'+lang).value = m.epInfo.ep;
+    }
+    switchTab(lang);
+    playMovie(lang);
+  }
+}
+
+/* ================================================
+   RECENTLY WATCHED RENDER
+   ================================================ */
+function renderAllRecents() {
+  ['en','hi','ml','ta','yt'].forEach(lang => {
+    renderRecent(lang);
+    if (lang === 'en') {
+      renderContinueWatching('en');
+      loadFromCloud('en'); // async sync on load
+    }
+  });
+}
+
+function renderRecent(lang){
+  const a=getR(lang),grid=document.getElementById('recent-grid-'+lang),empty=document.getElementById('no-recent-'+lang);
+  if(!a.length){grid.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  grid.innerHTML=a.map((m,i)=>{
+    const isYt=lang==='yt';
+    return `<div class="rc" onclick="replayR('${lang}',${i})">
+      <img src="${m.poster||''}" alt="${escHtml(m.title)}"
+        onerror="this.style.background='var(--surface2)';this.src=''"
+        style="width:100%;${isYt?'aspect-ratio:16/9':'aspect-ratio:2/3'};object-fit:cover;display:block;" />
+      <div class="rc-info">
+        <div class="rc-title">${escHtml(m.title)}</div>
+        <div class="rc-meta">${m.year||''}</div>
+      </div>
+      <button class="rc-rm" onclick="rmR(event,'${lang}',${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function replayR(lang,idx){
+  const m=getR(lang)[idx]; if(!m) return;
+  if(lang==='yt'){
+    switchTab('yt');
+    const thumb=m.poster||`https://img.youtube.com/vi/${m.ytId||m.tmdbId}/hqdefault.jpg`;
+    playYtVideo(m.ytId||m.tmdbId,m.title,'',thumb);
+  } else {
+    selMovie[lang]=m;
+    document.getElementById('srch-'+lang).value=m.title;
+    if(m.type==='tv'&&m.epInfo){
+      document.getElementById('sc-'+lang).classList.add('on');
+      document.getElementById('s-'+lang).value=m.epInfo.s;
+      document.getElementById('e-'+lang).value=m.epInfo.ep;
+    }
+    switchTab(lang);
+    playMovie(lang);
+  }
+}
+</script>
+
+<script>
+// Register service worker for PWA offline support
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+
+<script>
+/* ================================================
+   VIDEASY (& other embed servers) AD / OVERLAY BLOCKER
+   Watches the player iframes and removes ad elements
+   that appear inside them via postMessage or DOM injection.
+   ================================================ */
+(function() {
+
+  // CSS to inject into iframes to hide known ad containers on Videasy and similar
+  const AD_BLOCK_CSS = `
+    /* Videasy overlay ads */
+    [class*="ad-"], [id*="ad-"], [class*="advert"], [id*="advert"],
+    [class*="sponsor"], [class*="popup"], [class*="overlay-ad"],
+    [class*="banner-ad"], [class*="preroll"], [class*="interstitial"],
+    div[style*="z-index: 999"], div[style*="z-index:999"],
+    div[style*="z-index: 9999"], div[style*="z-index:9999"],
+    .vast-skip-button, .skip-button, .ad-container, .ad-overlay,
+    .adsbygoogle, iframe[src*="doubleclick"], iframe[src*="googlesyndication"],
+    a[href*="track."], a[target="_blank"][href*="click"],
+    div[style*="position: fixed"][style*="top: 0"],
+    div[style*="position:fixed"][style*="top:0"] {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      opacity: 0 !important;
+      height: 0 !important;
+      max-height: 0 !important;
+      overflow: hidden !important;
+    }
+    /* Kill any injected click-trap overlays */
+    body > div[style*="position: absolute"][style*="width: 100%"],
+    body > div[style*="position:absolute"][style*="width:100%"] {
+      display: none !important;
+    }
+  `;
+
+  function injectIntoIframe(iframe) {
+    try {
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!doc || !doc.head) return;
+      // Only inject once
+      if (doc.head.querySelector('#mkad-block')) return;
+      const style = doc.createElement('style');
+      style.id = 'mkad-block';
+      style.textContent = AD_BLOCK_CSS;
+      doc.head.appendChild(style);
+
+      // Also kill window.open inside the iframe
+      try {
+        iframe.contentWindow.open = () => null;
+      } catch(e) {}
+
+      // MutationObserver inside iframe DOM
+      const obs = new MutationObserver(() => {
+        try {
+          const d = iframe.contentDocument;
+          if (!d) return;
+          // Remove high-zindex fixed/absolute overlays
+          d.querySelectorAll('body > div, body > a').forEach(el => {
+            const cs = d.defaultView?.getComputedStyle(el);
+            if (!cs) return;
+            const z = parseInt(cs.zIndex) || 0;
+            const pos = cs.position;
+            if (z > 100 && (pos === 'fixed' || pos === 'absolute')) {
+              const w = parseInt(cs.width) || 0;
+              const h = parseInt(cs.height) || 0;
+              // Only remove if it covers a large area (likely an ad overlay)
+              if (w > 200 || h > 100) el.remove();
+            }
+          });
+        } catch(e) {}
+      });
+      try {
+        obs.observe(doc.body, { childList: true, subtree: true });
+      } catch(e) {}
+    } catch(e) {
+      // Cross-origin — can't inject. That's expected for some servers.
+    }
+  }
+
+  function hookFrames() {
+    document.querySelectorAll('iframe.vid-frame').forEach(iframe => {
+      // Inject on load
+      iframe.addEventListener('load', () => {
+        setTimeout(() => injectIntoIframe(iframe), 300);
+        setTimeout(() => injectIntoIframe(iframe), 1500);
+      });
+      // If already loaded
+      try {
+        if (iframe.contentDocument?.readyState === 'complete') injectIntoIframe(iframe);
+      } catch(e) {}
+    });
+  }
+
+  // Run after DOM ready and re-run periodically
+  document.addEventListener('DOMContentLoaded', hookFrames);
+  setInterval(hookFrames, 2000);
+
+  // Block postMessage-based ad redirects from iframes
+  window.addEventListener('message', function(e) {
+    const data = e.data;
+    if (typeof data === 'string') {
+      const lower = data.toLowerCase();
+      if (lower.includes('redirect') || lower.includes('navigate') || lower.includes('open_url')) {
+        e.stopImmediatePropagation();
+      }
+    }
+  }, true);
+
+})();
+</script>
+
+<script>
+/* ================================================
+   POP-UP & REDIRECT BLOCKER
+   Prevents embed servers from hijacking the app
+   ================================================ */
+(function() {
+
+  // 1. Block window.open() — the most common pop-up method
+  const _open = window.open.bind(window);
+  window.open = function(url, target, features) {
+    // Allow intentional opens triggered by OUR buttons (they use target="_blank" on <a> tags)
+    // Block everything else (ad pop-ups, malicious redirects from iframes)
+    return null;
+  };
+
+  // 2. Block top-level navigation away from the app
+  //    Embed iframes sometimes do: top.location = "https://adsite.com"
+  try {
+    Object.defineProperty(window, 'location', {
+      get() { return location; },
+      set(v) {
+        // Only allow navigation if it's within our own origin
+        try {
+          const dest = new URL(v, location.href);
+          if (dest.origin === location.origin) {
+            location.href = v;
+          }
+          // Silently block everything else
+        } catch(e) {}
+      }
+    });
+  } catch(e) {}
+
+  // 3. Intercept all clicks — if something tries to navigate the
+  //    top frame to an external URL, stop it
+  document.addEventListener('click', function(e) {
+    const a = e.target.closest('a[href]');
+    if (!a) return;
+    const href = a.getAttribute('href');
+    if (!href || href.startsWith('#') || href.startsWith('javascript')) return;
+    try {
+      const dest = new URL(href, location.href);
+      if (dest.origin !== location.origin) {
+        // It's external — only allow if it has target="_blank" (our intentional links)
+        if (a.target === '_blank') return; // allow, browser handles it safely
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    } catch(e) {}
+  }, true);
+
+  // 4. Block beforeunload redirects — if the page tries to navigate away
+  window.addEventListener('beforeunload', function(e) {
+    // Re-check: if we're still on our own origin, fine. If not, cancel.
+    // This is a safety net; can't fully stop in all cases but adds a layer.
+  });
+
+  // 5. MutationObserver — destroy any injected pop-up overlays or
+  //    redirect scripts that embed iframes inject into the DOM
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(m) {
+      m.addedNodes.forEach(function(node) {
+        if (node.nodeType !== 1) return;
+        const tag = node.tagName;
+        // Remove injected iframes that aren't our video players
+        if (tag === 'IFRAME') {
+          const src = node.src || '';
+          const isOurFrame = node.classList.contains('vid-frame');
+          if (!isOurFrame && src && !src.startsWith(location.origin)) {
+            node.remove();
+          }
+        }
+        // Remove injected scripts from ad networks
+        if (tag === 'SCRIPT') {
+          const src = node.src || '';
+          const adPatterns = ['doubleclick','googlesyndication','adservice','popads','popcash','exoclick','trafficjunky','juicyads','hilltopads','ero-advertising'];
+          if (adPatterns.some(p => src.includes(p))) {
+            node.remove();
+          }
+        }
+        // Remove injected overlays (full-screen divs that redirect on click)
+        if (tag === 'DIV' || tag === 'A') {
+          const style = window.getComputedStyle(node);
+          const zIndex = parseInt(style.zIndex) || 0;
+          const pos = style.position;
+          if (zIndex > 9000 && (pos === 'fixed' || pos === 'absolute')) {
+            // High z-index fixed overlay = likely an ad trap
+            node.remove();
+          }
+        }
+      });
+    });
+  });
+
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true
+  });
+
+  // 6. Periodically check for and remove invisible click-hijacking overlays
+  setInterval(function() {
+    document.querySelectorAll('body > *:not(.main):not(#intro):not(#site-header):not(#api-banner):not(script):not(style):not(link)').forEach(function(el) {
+      const style = window.getComputedStyle(el);
+      const zIndex = parseInt(style.zIndex) || 0;
+      if (zIndex > 9000 && style.position === 'fixed') {
+        el.remove();
+      }
+    });
+  }, 1000);
+
+})();
+</script>
+</body>
+</html>
