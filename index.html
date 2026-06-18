@@ -9,186 +9,192 @@
 :root{
   --bg:#070b14; --card:#111827; --card2:#182235; --gold:#f5c451;
   --green:#22c55e; --red:#ef4444; --text:#f8fafc; --muted:#94a3b8;
+  --blue:#38bdf8; --purple:#a78bfa; --orange:#fb923c;
 }
 *{box-sizing:border-box}
 body{
   margin:0; font-family:Inter,Arial,sans-serif; color:var(--text);
   background:radial-gradient(circle at top,#1e293b,#020617 60%);
+  min-height:100vh;
 }
 header{padding:26px 18px;text-align:center}
 h1{margin:0;font-size:34px;color:var(--gold);letter-spacing:1px}
 .header-motivation{color:#f8fafc;margin-top:10px;font-size:17px}
 .header-motivation b{color:var(--gold)}
 .sync-status{font-size:12px;color:var(--muted);margin-top:8px}
-.tabs{display:flex;gap:10px;justify-content:center;margin:10px}
+.tabs{display:flex;gap:10px;justify-content:center;margin:10px;flex-wrap:wrap;position:sticky;top:0;z-index:10;padding:10px;background:rgba(7,11,20,.82);backdrop-filter:blur(12px)}
 button{
-  border:0;border-radius:12px;padding:10px 14px;font-weight:700;
+  border:0;border-radius:12px;padding:10px 14px;font-weight:800;
   background:var(--card2);color:var(--text);cursor:pointer;
 }
+button:hover{filter:brightness(1.08)}
 button.active,.gold{background:var(--gold);color:#111827}
-.wrap{max-width:1050px;margin:auto;padding:14px}
+button.green{background:rgba(34,197,94,.2);border:1px solid rgba(34,197,94,.5);color:#dcfce7}
+button.red{background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.45);color:#fee2e2}
+.wrap{max-width:1120px;margin:auto;padding:14px}
 .card{
-  background:rgba(17,24,39,.9);border:1px solid rgba(245,196,81,.25);
-  border-radius:20px;padding:18px;margin-bottom:18px;box-shadow:0 12px 35px #0008;
+  background:rgba(17,24,39,.92);border:1px solid rgba(245,196,81,.22);
+  border-radius:22px;padding:18px;margin-bottom:18px;box-shadow:0 12px 35px #0008;
 }
-.motivation{font-size:18px;color:#fff;margin-bottom:16px}
-.motivation b{color:var(--gold)}
+.hero{
+  background:linear-gradient(135deg,rgba(245,196,81,.18),rgba(56,189,248,.10),rgba(17,24,39,.95));
+  border-color:rgba(245,196,81,.38);
+}
 .tab{display:none}.tab.active{display:block}
+.dashboard-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:14px}
+.dash-card{background:#020617;border:1px solid #263244;border-radius:18px;padding:14px;min-height:108px}
+.dash-label{color:var(--muted);font-size:13px;margin-bottom:8px}
+.dash-value{font-size:24px;font-weight:900;color:#fff}
+.dash-sub{color:var(--muted);font-size:12px;margin-top:6px}
+.ring-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+.ring-card{background:#020617;border:1px solid #263244;border-radius:18px;padding:16px;text-align:center}
+.ring{
+  width:118px;height:118px;border-radius:50%;margin:0 auto 10px;display:grid;place-items:center;
+  background:conic-gradient(var(--gold) 0deg, #1e293b 0deg);
+}
+.ring-inner{width:86px;height:86px;border-radius:50%;background:#020617;display:grid;place-items:center;font-weight:900;font-size:18px}
+.ring-title{font-weight:800}.ring-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.badge{background:#020617;border:1px solid #334155;border-radius:999px;padding:8px 12px;color:var(--gold);font-weight:800;font-size:13px}
+.badge.green{color:#86efac;border-color:rgba(34,197,94,.45)}
+.badge.red{color:#fca5a5;border-color:rgba(239,68,68,.45)}
+.badges{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.small{font-size:13px;color:var(--muted)}
+.row{display:grid;grid-template-columns:1fr 150px;gap:10px;margin-top:12px}
+.row.three{grid-template-columns:1fr 1fr 150px}
+input,select{
+  width:100%;padding:11px;border-radius:12px;border:1px solid #334155;
+  background:#020617;color:var(--text);font-size:14px;
+}
+.quick-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.mission-list{display:grid;gap:10px;margin-top:12px}
+.mission-card{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#020617;border:1px solid #263244;border-radius:16px;padding:14px}
+.mission-card.done{border-color:rgba(34,197,94,.55);background:rgba(34,197,94,.08)}
+.mission-main{display:flex;gap:10px;align-items:flex-start}
+.mission-check{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#111827;border:1px solid #334155;font-weight:900;flex:0 0 auto}
+.mission-card.done .mission-check{background:var(--green);color:#052e16;border-color:var(--green)}
+.mission-name{font-weight:800}.mission-status{font-size:12px;color:var(--muted);margin-top:3px}
+.mission-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .cal-head{display:flex;justify-content:space-between;align-items:center}
 .calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:14px}
-.day,.dow{
-  min-height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;
-  background:#0f172a;border:1px solid #263244;
-}
-.dow{min-height:30px;color:var(--gold);font-weight:800}
-.day{cursor:pointer;position:relative}
-.day.empty{background:transparent;border:0;cursor:default}
-.day.green{background:rgba(34,197,94,.35);border-color:var(--green)}
-.day.red{background:rgba(239,68,68,.35);border-color:var(--red)}
-.today{outline:2px solid var(--gold)}
-.selected{box-shadow:0 0 0 3px #fff inset}
-table{width:100%;border-collapse:collapse;margin-top:12px}
-th,td{padding:11px;border-bottom:1px solid #334155;text-align:left;vertical-align:middle}
-input,select{
-  width:100%;padding:10px;border-radius:10px;border:1px solid #334155;
-  background:#020617;color:var(--text);
-}
-.row{display:grid;grid-template-columns:1fr 150px;gap:10px;margin-top:12px}
-.small{font-size:13px;color:var(--muted)}
-.actions{display:flex;gap:8px;flex-wrap:wrap}
-.chart-scroll{
-  overflow-x:auto;
-  overflow-y:hidden;
-  padding-bottom:10px;
-}
-
-.chart-scroll canvas{
-  height:420px;
-  width:auto;
-  min-width:1000px;
-  background:#020617;
-  border-radius:16px;
-  border:1px solid #334155;
-  display:block;
-}
-.stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
-.stat{background:#020617;border-radius:14px;padding:12px;flex:1;min-width:170px}
-.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.badge{
-  background:#020617;border:1px solid #334155;border-radius:999px;
-  padding:8px 12px;color:var(--gold);font-weight:700;
-}
-@media(max-width:650px){
-  .row{grid-template-columns:1fr}
-  .day{min-height:45px;font-size:13px}
-  th,td{font-size:13px;padding:8px}
-  h1{font-size:28px}
-}
+.day,.dow{min-height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#0f172a;border:1px solid #263244}
+.dow{min-height:30px;color:var(--gold);font-weight:900}.day{cursor:pointer;position:relative}.day.empty{background:transparent;border:0;cursor:default}.day.green{background:rgba(34,197,94,.35);border-color:var(--green)}.day.red{background:rgba(239,68,68,.35);border-color:var(--red)}.today{outline:2px solid var(--gold)}.selected{box-shadow:0 0 0 3px #fff inset}
+.chart-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:10px;position:relative}.chart-scroll canvas{height:420px;width:auto;min-width:1000px;background:#020617;border-radius:16px;border:1px solid #334155;display:block}.chart-tooltip{position:absolute;pointer-events:none;background:#020617;border:1px solid #475569;color:#fff;border-radius:10px;padding:8px 10px;font-size:12px;display:none;box-shadow:0 8px 20px #0008}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}.stat{background:#020617;border-radius:14px;padding:12px;flex:1;min-width:170px;border:1px solid #263244}
+table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:11px;border-bottom:1px solid #334155;text-align:left;vertical-align:middle}.actions{display:flex;gap:8px;flex-wrap:wrap}
+.progress-note{font-size:16px;line-height:1.5;margin-top:8px}.progress-note b{color:var(--gold)}
+@media(max-width:850px){.dashboard-grid,.ring-grid{grid-template-columns:1fr 1fr}.row.three{grid-template-columns:1fr}.mission-card{grid-template-columns:1fr}.mission-actions{justify-content:flex-start}}
+@media(max-width:650px){.dashboard-grid,.ring-grid{grid-template-columns:1fr}.row{grid-template-columns:1fr}.day{min-height:45px;font-size:13px}th,td{font-size:13px;padding:8px}h1{font-size:28px}.dash-value{font-size:21px}.tabs button{flex:1}}
 </style>
 </head>
 <body>
-
 <header>
   <h1>DA THADIYA</h1>
   <div class="header-motivation" id="headerMotivation"></div>
   <div class="sync-status" id="syncStatus">Sync: local only until Firebase is configured</div>
 </header>
-
 <div class="tabs">
-  <button class="tabBtn active" onclick="showTab('missions', this)">Mission Calendar</button>
+  <button class="tabBtn active" onclick="showTab('today', this)">Today</button>
+  <button class="tabBtn" onclick="showTab('missions', this)">Mission Calendar</button>
   <button class="tabBtn" onclick="showTab('weight', this)">Weight Tracker</button>
 </div>
-
 <div class="wrap">
-  <section id="missions" class="tab active">
-    <div class="card">
-      <div class="cal-head">
-        <button onclick="changeMonth(-1)">←</button>
-        <h2 id="monthTitle"></h2>
-        <button onclick="changeMonth(1)">→</button>
+  <section id="today" class="tab active">
+    <div class="card hero">
+      <div class="section-title"><h2>Today’s Status</h2><div class="badge" id="todayDateBadge"></div></div>
+      <div class="dashboard-grid">
+        <div class="dash-card"><div class="dash-label">Current Weight</div><div class="dash-value"><span id="dashCurrentWeight"></span> kg</div><div class="dash-sub" id="dashWeightChange"></div></div>
+        <div class="dash-card"><div class="dash-label">Target Weight</div><div class="dash-value"><span id="dashTargetWeight"></span> kg</div><div class="dash-sub"><span id="dashWeightLeft"></span> kg left</div></div>
+        <div class="dash-card"><div class="dash-label">Proposal Countdown</div><div class="dash-value" id="dashCountdown"></div><div class="dash-sub">Goal deadline: Oct 10, 7 PM</div></div>
+        <div class="dash-card"><div class="dash-label">Current Streak</div><div class="dash-value"><span id="dashStreak"></span> days</div><div class="dash-sub">Perfect mission days</div></div>
       </div>
+      <div class="ring-grid">
+        <div class="ring-card"><div class="ring" id="weightRing"><div class="ring-inner" id="weightRingText"></div></div><div class="ring-title">Weight Goal</div><div class="ring-sub" id="weightRingSub"></div></div>
+        <div class="ring-card"><div class="ring" id="missionRing"><div class="ring-inner" id="missionRingText"></div></div><div class="ring-title">Today’s Missions</div><div class="ring-sub" id="missionRingSub"></div></div>
+        <div class="ring-card"><div class="ring" id="countdownRing"><div class="ring-inner" id="countdownRingText"></div></div><div class="ring-title">Time Remaining</div><div class="ring-sub">Until proposal deadline</div></div>
+      </div>
+      <p class="progress-note" id="smartMotivation"></p>
+    </div>
+    <div class="card">
+      <div class="section-title"><h2>Today’s Missions</h2><div class="badge" id="todayMissionBadge"></div></div>
+      <div class="mission-list" id="todayMissionList"></div>
+    </div>
+    <div class="card">
+      <div class="section-title"><h2>Today’s Weight</h2><div class="badge" id="onTrackBadge"></div></div>
+      <div class="row three">
+        <input type="date" id="todayWeightDate" />
+        <input type="number" step="0.1" id="todayWeightValue" placeholder="Weight in kg" />
+        <button class="gold" onclick="saveTodayWeight()">Save Today</button>
+      </div>
+      <div class="quick-row">
+        <button onclick="adjustTodayWeight(-0.5)">-0.5</button><button onclick="adjustTodayWeight(-0.1)">-0.1</button><button onclick="adjustTodayWeight(0.1)">+0.1</button><button onclick="adjustTodayWeight(0.5)">+0.5</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title"><h2>Weekly Report</h2><div class="badge" id="weeklyBadge"></div></div>
+      <div class="dashboard-grid">
+        <div class="dash-card"><div class="dash-label">Weight Change</div><div class="dash-value" id="weeklyWeightChange"></div><div class="dash-sub">Last 7 days</div></div>
+        <div class="dash-card"><div class="dash-label">Missions Completed</div><div class="dash-value" id="weeklyMissionCount"></div><div class="dash-sub">Last 7 days</div></div>
+        <div class="dash-card"><div class="dash-label">Perfect Days</div><div class="dash-value" id="weeklyPerfectDays"></div><div class="dash-sub">Last 7 days</div></div>
+        <div class="dash-card"><div class="dash-label">Best Day</div><div class="dash-value" id="weeklyBestDay"></div><div class="dash-sub">Highest completion</div></div>
+      </div>
+      <div class="badges" id="achievementBadges"></div>
+    </div>
+  </section>
 
+  <section id="missions" class="tab">
+    <div class="card">
+      <div class="cal-head"><button onclick="changeMonth(-1)">←</button><h2 id="monthTitle"></h2><button onclick="changeMonth(1)">→</button></div>
       <div class="calendar" id="calendar"></div>
-      <p class="small">
-        Click any date to view or update that day’s missions. This lets you go back and complete a mission if you forgot to update it.
-      </p>
+      <p class="small">Click any date to view or update that day’s missions.</p>
     </div>
-
     <div class="card">
-      <div class="section-title">
-        <h2>Missions for Selected Day</h2>
-        <div class="badge" id="selectedDateBadge"></div>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Mission</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="missionTable"></tbody>
-      </table>
-
-      <div class="row">
-        <input id="newMission" placeholder="Add mission for selected day..." />
-        <button class="gold" onclick="addMissionForSelectedDay()">Add Mission</button>
-      </div>
-
-      <p class="small">
-        A day turns green when every mission for that date is complete. It turns red when at least one is missed.
-      </p>
+      <div class="section-title"><h2>Missions for Selected Day</h2><div class="badge" id="selectedDateBadge"></div></div>
+      <div class="mission-list" id="selectedMissionList"></div>
+      <div class="row"><input id="newMission" placeholder="Add mission for selected day..." /><button class="gold" onclick="addMissionForSelectedDay()">Add Mission</button></div>
+      <p class="small">A day turns green when every mission is complete. It turns red when at least one is missed.</p>
     </div>
-
+    <div class="card">
+      <div class="section-title"><h2>Permanent Missions</h2><div class="badge">Every Day</div></div>
+      <p class="small">Add a mission here when you want it to automatically appear on every day going forward.</p>
+      <table><thead><tr><th>Permanent Mission</th><th>Action</th></tr></thead><tbody id="permanentMissionTable"></tbody></table>
+      <div class="row"><input id="permanentMissionInput" placeholder="Example: No soda, gym workout, 30 minute walk..." /><button class="gold" onclick="addPermanentMission()">Add Permanent Mission</button></div>
+    </div>
     <div class="card">
       <h2>Add Tomorrow’s Mission</h2>
       <p class="small">Enter a mission for tomorrow. It will appear on tomorrow’s mission list when tomorrow comes.</p>
-
-      <div class="row">
-        <input id="tomorrowMissionInput" placeholder="Example: Call gym, meal prep, buy groceries..." />
-        <button class="gold" onclick="addTomorrowMission()">Add for Tomorrow</button>
-      </div>
+      <div class="row"><input id="tomorrowMissionInput" placeholder="Example: Call gym, meal prep, buy groceries..." /><button class="gold" onclick="addTomorrowMission()">Add for Tomorrow</button></div>
     </div>
   </section>
 
   <section id="weight" class="tab">
     <div class="card">
-      <div class="chart-scroll">
-  <canvas id="weightChart" width="1100" height="520"></canvas>
-</div>
-
+      <div class="section-title"><h2>Weight Loss Mission Graph</h2><div class="badge" id="graphStatusBadge"></div></div>
+      <p class="small" id="graphStatusText"></p>
+      <div class="chart-scroll" id="chartWrap"><canvas id="weightChart" width="1100" height="520"></canvas><div class="chart-tooltip" id="chartTooltip"></div></div>
       <div class="stats">
         <div class="stat">Current Weight: <b id="currentWeightText"></b> kg</div>
         <div class="stat">Target Weight: <b id="targetWeightText"></b> kg</div>
+        <div class="stat">Target Pace: <b id="targetPaceText"></b> kg/week</div>
+        <div class="stat">Your Pace: <b id="actualPaceText"></b> kg/week</div>
       </div>
     </div>
-
     <div class="card">
       <h2>Update Weight</h2>
-      <div class="row">
-        <input type="date" id="weightDate" />
-        <input type="number" step="0.1" id="weightValue" placeholder="Weight in kg" />
-      </div>
-      <button class="gold" style="margin-top:12px" onclick="addWeight()">Save Weight</button>
-
+      <div class="row"><input type="date" id="weightDate" /><input type="number" step="0.1" id="weightValue" placeholder="Weight in kg" /></div>
+      <div class="quick-row"><button onclick="adjustWeightInput(-0.5)">-0.5</button><button onclick="adjustWeightInput(-0.1)">-0.1</button><button onclick="adjustWeightInput(0.1)">+0.1</button><button onclick="adjustWeightInput(0.5)">+0.5</button><button class="gold" onclick="addWeight()">Save Weight</button></div>
       <h2 style="margin-top:24px">Edit Target</h2>
-      <div class="row">
-        <input type="number" step="0.1" id="targetWeightInput" />
-        <button onclick="saveTarget()">Save Target</button>
-      </div>
+      <div class="row"><input type="number" step="0.1" id="targetWeightInput" /><button onclick="saveTarget()">Save Target</button></div>
+    </div>
+    <div class="card">
+      <div class="section-title"><h2>Weight History</h2><div class="badge" id="weightHistoryCount"></div></div>
+      <table><thead><tr><th>Date</th><th>Weight</th><th>Action</th></tr></thead><tbody id="weightHistoryTable"></tbody></table>
     </div>
   </section>
 </div>
-
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-
 <script>
-/*
-  FIREBASE SETUP:
-  Replace the placeholder values below with your Firebase Web App config.
-*/
 const firebaseConfig = {
   apiKey: "AIzaSyAFhJsKzgnTDxOoFV9DqO22rR29fLP6DeY",
   authDomain: "da-thadiya.firebaseapp.com",
@@ -197,648 +203,88 @@ const firebaseConfig = {
   messagingSenderId: "544005056031",
   appId: "1:544005056031:web:16c9127e3a3c221c8e572a"
 };
-
 const proposalDate = new Date("2026-10-10T19:00:00");
-
-const defaultMissions = [
-  "10,000 steps",
-  "Drink three glasses of water",
-  "Read 10 minutes",
-  "Clean room by end of day",
-  "Read the Bible and say a prayer",
-  "Brush teeth"
-];
-
+const goalStartDate = new Date("2026-05-01T00:00:00");
+const goalStartWeight = 101;
+const defaultMissions = ["10,000 steps","Drink three glasses of water","Read 10 minutes","Clean room by end of day","Read the Bible and say a prayer","Brush teeth"];
 let currentMonth = new Date();
 let selectedDate = todayKey();
-
 let missionsByDate = JSON.parse(localStorage.getItem("missionsByDate")) || {};
+let permanentMissions = JSON.parse(localStorage.getItem("permanentMissions")) || [];
 let completions = JSON.parse(localStorage.getItem("completions")) || {};
 let dayResults = JSON.parse(localStorage.getItem("dayResults")) || {};
-let weights = JSON.parse(localStorage.getItem("weights")) || [
-  {date: "2026-06-13", weight: 98.7}
-];
+let weights = JSON.parse(localStorage.getItem("weights")) || [{date:"2026-06-13",weight:98.7}];
 let targetWeight = Number(localStorage.getItem("targetWeight")) || 91;
-
-let db = null;
-let syncEnabled = false;
-let applyingCloudUpdate = false;
-let syncTimer = null;
-
+let db = null, syncEnabled = false, applyingCloudUpdate = false, syncTimer = null;
+let chartPoints = [];
 function todayKey(){ return new Date().toISOString().slice(0,10); }
-
-function getDateKey(y,m,d){
-  return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-}
-
-function addDays(dateKey, days){
-  const d = new Date(dateKey + "T12:00:00");
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0,10);
-}
-
-function localSave(){
-  localStorage.setItem("missionsByDate", JSON.stringify(missionsByDate));
-  localStorage.setItem("completions", JSON.stringify(completions));
-  localStorage.setItem("dayResults", JSON.stringify(dayResults));
-  localStorage.setItem("weights", JSON.stringify(weights));
-  localStorage.setItem("targetWeight", targetWeight);
-}
-
-function save(){
-  localSave();
-  syncToCloud();
-}
-
-function appState(){
-  return {
-    missionsByDate,
-    completions,
-    dayResults,
-    weights,
-    targetWeight,
-    updatedAt: Date.now()
-  };
-}
-
-function applyState(data){
-  if(!data) return;
-
-  missionsByDate = data.missionsByDate || missionsByDate;
-  completions = data.completions || completions;
-  dayResults = data.dayResults || dayResults;
-  weights = data.weights || weights;
-  targetWeight = data.targetWeight || targetWeight;
-
-  localSave();
-  renderCalendar();
-  renderMissions();
-  renderTomorrowMissions();
-  drawChart();
-}
-
+function dateKeyFromDate(d){ return d.toISOString().slice(0,10); }
+function getDateKey(y,m,d){ return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
+function addDays(dateKey, days){ const d = new Date(dateKey + "T12:00:00"); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); }
+function escapeHTML(str){ return String(str).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
+function localSave(){ localStorage.setItem("missionsByDate",JSON.stringify(missionsByDate)); localStorage.setItem("permanentMissions",JSON.stringify(permanentMissions)); localStorage.setItem("completions",JSON.stringify(completions)); localStorage.setItem("dayResults",JSON.stringify(dayResults)); localStorage.setItem("weights",JSON.stringify(weights)); localStorage.setItem("targetWeight",targetWeight); }
+function save(){ localSave(); syncToCloud(); }
+function appState(){ return {missionsByDate, permanentMissions, completions, dayResults, weights, targetWeight, updatedAt: Date.now()}; }
+function applyState(data){ if(!data) return; missionsByDate=data.missionsByDate||missionsByDate; permanentMissions=data.permanentMissions||permanentMissions; completions=data.completions||completions; dayResults=data.dayResults||dayResults; weights=data.weights||weights; targetWeight=data.targetWeight||targetWeight; localSave(); renderAll(); }
 function initSync(){
-  const notConfigured = firebaseConfig.apiKey.includes("PASTE_");
-
-  if(notConfigured){
-    document.getElementById("syncStatus").textContent =
-      "Sync: local only. Add Firebase config to sync laptop and Android.";
-    return;
-  }
-
   try{
-    firebase.initializeApp(firebaseConfig);
-    db = firebase.firestore();
-    syncEnabled = true;
-
-    const ref = db.collection("daThadiyaUsers").doc("joel");
-
-    ref.get().then(snapshot => {
-      if(snapshot.exists){
-        applyState(snapshot.data());
-      } else {
-        ref.set(appState(), {merge:true});
-      }
-      document.getElementById("syncStatus").textContent = "Sync: connected";
-    });
-
-    ref.onSnapshot(snapshot => {
-      if(!snapshot.exists) return;
-
-      applyingCloudUpdate = true;
-      applyState(snapshot.data());
-      applyingCloudUpdate = false;
-
-      document.getElementById("syncStatus").textContent = "Sync: connected";
-    }, () => {
-      document.getElementById("syncStatus").textContent = "Sync: offline, using local backup";
-    });
-
-  } catch(e){
-    document.getElementById("syncStatus").textContent = "Sync: Firebase error, using local backup";
-  }
+    firebase.initializeApp(firebaseConfig); db=firebase.firestore(); syncEnabled=true; const ref=db.collection("daThadiyaUsers").doc("joel");
+    ref.get().then(s=>{ if(s.exists) applyState(s.data()); else ref.set(appState(),{merge:true}); document.getElementById("syncStatus").textContent="Sync: connected"; });
+    ref.onSnapshot(s=>{ if(!s.exists) return; applyingCloudUpdate=true; applyState(s.data()); applyingCloudUpdate=false; document.getElementById("syncStatus").textContent="Sync: connected"; },()=>document.getElementById("syncStatus").textContent="Sync: offline, using local backup");
+  }catch(e){ document.getElementById("syncStatus").textContent="Sync: Firebase error, using local backup"; }
 }
-
-function syncToCloud(){
-  if(!syncEnabled || !db || applyingCloudUpdate) return;
-
-  clearTimeout(syncTimer);
-  syncTimer = setTimeout(() => {
-    db.collection("daThadiyaUsers").doc("joel").set(appState(), {merge:true})
-      .then(() => document.getElementById("syncStatus").textContent = "Sync: saved")
-      .catch(() => document.getElementById("syncStatus").textContent = "Sync: offline, using local backup");
-  }, 500);
-}
-
-function getMissionsForDate(dateKey){
-  if(!missionsByDate[dateKey]){
-    missionsByDate[dateKey] = [...defaultMissions];
-    localSave();
-  }
-
-  for(const mission of defaultMissions){
-    if(!missionsByDate[dateKey].includes(mission)){
-      missionsByDate[dateKey].push(mission);
-    }
-  }
-
-  return missionsByDate[dateKey];
-}
-
-function motivation(){
-  const now = new Date();
-  const diff = Math.max(0, proposalDate - now);
-  const days = Math.floor(diff / 86400000);
-  const hours = Math.floor((diff % 86400000) / 3600000);
-
-  const msg = `Da Thadiya, welcome back! Only <b>${days} days and ${hours} hours</b> left to proposal! Work hard, you are getting close!`;
-
-  document.getElementById("headerMotivation").innerHTML = msg;
-}
-
-function showTab(id, btn){
-  document.querySelectorAll(".tab,.tabBtn").forEach(x=>x.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-  btn.classList.add("active");
-  if(id==="weight") drawChart();
-}
-
-function evaluateDay(dateKey){
-  const missions = getMissionsForDate(dateKey);
-  const done = completions[dateKey] || {};
-  const missed = missions.filter(m => !done[m]);
-
-  dayResults[dateKey] = {
-    status: missed.length === 0 ? "green" : "red",
-    missed
-  };
-
-  save();
-}
-
-function autoCheckPastDays(){
-  const yKey = addDays(todayKey(), -1);
-  if(!dayResults[yKey]) evaluateDay(yKey);
-}
-
-function renderCalendar(){
-  const cal = document.getElementById("calendar");
-  cal.innerHTML = "";
-
-  const y = currentMonth.getFullYear();
-  const m = currentMonth.getMonth();
-
-  document.getElementById("monthTitle").textContent =
-    currentMonth.toLocaleString("default",{month:"long",year:"numeric"});
-
-  ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(d=>{
-    const el=document.createElement("div");
-    el.className="dow";
-    el.textContent=d;
-    cal.appendChild(el);
-  });
-
-  const first = new Date(y,m,1).getDay();
-  const days = new Date(y,m+1,0).getDate();
-
-  for(let i=0;i<first;i++){
-    const e=document.createElement("div");
-    e.className="day empty";
-    cal.appendChild(e);
-  }
-
-  for(let d=1; d<=days; d++){
-    const key = getDateKey(y,m,d);
-    const el = document.createElement("div");
-    el.className = "day";
-
-    if(key === todayKey()) el.classList.add("today");
-    if(key === selectedDate) el.classList.add("selected");
-    if(dayResults[key]) el.classList.add(dayResults[key].status);
-
-    el.textContent = d;
-    el.onclick = () => selectDate(key);
-    cal.appendChild(el);
-  }
-}
-
-function selectDate(key){
-  selectedDate = key;
-  getMissionsForDate(selectedDate);
-  renderCalendar();
-  renderMissions();
-}
-
-function changeMonth(n){
-  currentMonth.setMonth(currentMonth.getMonth()+n);
-  renderCalendar();
-}
-
-function renderMissions(){
-  const tbody = document.getElementById("missionTable");
-  tbody.innerHTML = "";
-
-  document.getElementById("selectedDateBadge").textContent = selectedDate;
-
-  const missions = getMissionsForDate(selectedDate);
-  completions[selectedDate] = completions[selectedDate] || {};
-
-  missions.forEach((mission, i)=>{
-    const tr=document.createElement("tr");
-    const done = !!completions[selectedDate][mission];
-
-    tr.innerHTML = `
-      <td><input value="${escapeHTML(mission)}" onchange="editMission(${i}, this.value)" /></td>
-      <td>${done ? "✅ Complete" : "❌ Not Complete"}</td>
-      <td class="actions">
-        <button onclick="toggleMission(${i})">${done ? "Undo" : "Complete"}</button>
-        <button onclick="removeMission(${i})">Remove</button>
-      </td>`;
-
-    tbody.appendChild(tr);
-  });
-}
-
-function toggleMission(index){
-  const missions = getMissionsForDate(selectedDate);
-  const mission = missions[index];
-
-  completions[selectedDate] = completions[selectedDate] || {};
-  completions[selectedDate][mission] = !completions[selectedDate][mission];
-
-  evaluateDay(selectedDate);
-  renderMissions();
-  renderCalendar();
-}
-
-function addMissionForSelectedDay(){
-  const val = document.getElementById("newMission").value.trim();
-  if(!val) return;
-
-  getMissionsForDate(selectedDate).push(val);
-  document.getElementById("newMission").value = "";
-
-  evaluateDay(selectedDate);
-  save();
-  renderMissions();
-  renderCalendar();
-}
-
-function editMission(i, val){
-  const missions = getMissionsForDate(selectedDate);
-  const old = missions[i];
-  const updated = val.trim() || old;
-
-  missions[i] = updated;
-
-  if(completions[selectedDate]?.[old]){
-    completions[selectedDate][updated] = completions[selectedDate][old];
-    delete completions[selectedDate][old];
-  }
-
-  evaluateDay(selectedDate);
-  save();
-  renderMissions();
-  renderCalendar();
-}
-
-function removeMission(i){
-  if(confirm("Remove this mission from this selected day?")){
-    const missions = getMissionsForDate(selectedDate);
-    const removed = missions.splice(i,1)[0];
-
-    if(completions[selectedDate]) delete completions[selectedDate][removed];
-
-    evaluateDay(selectedDate);
-    save();
-    renderMissions();
-    renderCalendar();
-  }
-}
-
-function renderTomorrowMissions(){
-  // Tomorrow's full mission list is intentionally hidden on the website.
-}
-
-function addTomorrowMission(){
-  const input = document.getElementById("tomorrowMissionInput");
-  const val = input.value.trim();
-  if(!val) return;
-
-  const tomorrow = addDays(todayKey(), 1);
-  getMissionsForDate(tomorrow).push(val);
-
-  input.value = "";
-  save();
-
-  if(selectedDate === tomorrow){
-    renderMissions();
-    renderCalendar();
-  }
-}
-
-function removeTomorrowMission(i){
-  const tomorrow = addDays(todayKey(), 1);
-  const missions = getMissionsForDate(tomorrow);
-  missions.splice(i,1);
-
-  save();
-  renderTomorrowMissions();
-
-  if(selectedDate === tomorrow){
-    renderMissions();
-    renderCalendar();
-  }
-}
-
-function addWeight(){
-  const date = document.getElementById("weightDate").value;
-  const weight = Number(document.getElementById("weightValue").value);
-
-  if(!date || !weight) return alert("Enter date and weight.");
-
-  if(weight < 85 || weight > 105){
-    alert("Weight should be between 85 kg and 105 kg for this graph.");
-    return;
-  }
-
-  weights = weights.filter(w => w.date !== date);
-  weights.push({date, weight});
-  weights.sort((a,b)=>new Date(a.date)-new Date(b.date));
-
-  save();
-  drawChart();
-}
-
-function saveTarget(){
-  const newTarget = Number(document.getElementById("targetWeightInput").value);
-
-  if(newTarget < 85 || newTarget > 105){
-    alert("Target weight should be between 85 kg and 105 kg for this graph.");
-    return;
-  }
-
-  targetWeight = newTarget;
-  save();
-  drawChart();
-}
-
-function drawChart(){
-  const canvas=document.getElementById("weightChart");
-
-  weights.sort((a,b)=>new Date(a.date)-new Date(b.date));
-
-  const latest = weights[weights.length-1];
-
-  const earliestWeightDate = new Date(weights[0].date + "T00:00:00");
-  const projectionStartDate = new Date("2026-05-01T00:00:00");
-  const projectionStartWeight = 101;
-
-  // Start x-axis at the first day of the earliest entered month,
-  // but always include May so the green projection line can begin there.
-  const earliestMonthStart = new Date(
-    earliestWeightDate.getFullYear(),
-    earliestWeightDate.getMonth(),
-    1
-  );
-
-  const start = earliestMonthStart < projectionStartDate ? earliestMonthStart : projectionStartDate;
-
-  const end = proposalDate;
-
-  const months = monthsBetween(start, end) + 1;
-
-  // Wider graph = more breathing room.
-  // Increase 180 to 220 if you want even more spacing.
-  canvas.width = Math.max(1100, months * 180);
-  canvas.height = 520;
-
-  const ctx=canvas.getContext("2d");
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  const padL=80, padR=40, padT=35, padB=75;
-  const chartW=canvas.width-padL-padR;
-  const chartH=canvas.height-padT-padB;
-
-  const minW = 85;
-  const maxW = 105;
-
-  const x = date => padL + ((new Date(date)-start)/(end-start))*chartW;
-  const y = kg => padT + ((maxW-kg)/(maxW-minW))*chartH;
-
-  ctx.fillStyle="#020617";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  drawGraphPaper(ctx, padL, padT, chartW, chartH, minW, maxW, start, end, x, y);
-  drawAxes(ctx, padL, padT, chartW, chartH, minW, maxW, start, end, x, y);
-
-  ctx.strokeStyle="#ef4444";
-  ctx.lineWidth=3;
-  ctx.setLineDash([]);
-  ctx.beginPath();
-  ctx.moveTo(padL, y(targetWeight));
-  ctx.lineTo(padL+chartW, y(targetWeight));
-  ctx.stroke();
-
-  ctx.fillStyle="#ef4444";
-  ctx.font="15px Arial";
-  ctx.fillText(`Target: ${targetWeight} kg`, padL+10, y(targetWeight)-10);
-
-ctx.strokeStyle="#38bdf8";
-ctx.lineWidth=4;
-ctx.lineCap="round";
-ctx.lineJoin="round";
-ctx.setLineDash([]);
-
-const weightPoints = weights.map(pt => ({
-  x: x(pt.date),
-  y: y(pt.weight)
-}));
-
-drawSmoothLine(ctx, weightPoints);
-
-  weights.forEach(pt=>{
-    ctx.fillStyle="#38bdf8";
-    ctx.beginPath();
-    ctx.arc(x(pt.date), y(pt.weight), 6, 0, Math.PI*2);
-    ctx.fill();
-
-    ctx.fillStyle="#f8fafc";
-    ctx.font="12px Arial";
-    ctx.fillText(`${pt.weight}`, x(pt.date)+8, y(pt.weight)-8);
-  });
-
-  ctx.strokeStyle="#22c55e";
-  ctx.setLineDash([8,8]);
-  ctx.lineWidth=3;
-  ctx.lineCap="round";
-  ctx.beginPath();
-  ctx.moveTo(x(projectionStartDate), y(projectionStartWeight));
-  ctx.lineTo(x(proposalDate), y(targetWeight));
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  ctx.fillStyle="#22c55e";
-  ctx.beginPath();
-  ctx.arc(x(projectionStartDate), y(projectionStartWeight), 5, 0, Math.PI*2);
-  ctx.fill();
-  ctx.font="12px Arial";
-  ctx.fillText("101 kg", x(projectionStartDate)+8, y(projectionStartWeight)-8);
-
-  ctx.fillStyle="#f8fafc";
-  ctx.font="bold 17px Arial";
-  ctx.fillText("Weight Loss Mission Graph", padL, 24);
-
-  ctx.font="13px Arial";
-  ctx.fillStyle="#38bdf8";
-  ctx.fillText("Actual weight", padL + 245, 24);
-  ctx.fillStyle="#22c55e";
-  ctx.fillText("Goal path", padL + 350, 24);
-
-  function monthsBetween(startDate, endDate){
-  return (
-    (endDate.getFullYear() - startDate.getFullYear()) * 12 +
-    (endDate.getMonth() - startDate.getMonth())
-  );
-}
-
-function drawSmoothLine(ctx, points){
-  if(points.length === 0) return;
-
-  ctx.beginPath();
-  ctx.moveTo(points[0].x, points[0].y);
-
-  if(points.length === 1){
-    ctx.stroke();
-    return;
-  }
-
-  // Catmull-Rom style smoothing converted to bezier curves.
-  // This keeps the smooth curve passing directly through every saved weight point,
-  // so the dots sit exactly on the line instead of floating above or below it.
-  for(let i = 0; i < points.length - 1; i++){
-    const p0 = points[i - 1] || points[i];
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const p3 = points[i + 2] || p2;
-
-    const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = p1.y + (p2.y - p0.y) / 6;
-    const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = p2.y - (p3.y - p1.y) / 6;
-
-    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
-  }
-
-  ctx.stroke();
-}
-  
-  document.getElementById("currentWeightText").textContent = latest.weight;
-  document.getElementById("targetWeightText").textContent = targetWeight;
-  document.getElementById("targetWeightInput").value = targetWeight;
-}
-
-function drawGraphPaper(ctx, padL, padT, chartW, chartH, minW, maxW, start, end, x, y){
-  ctx.lineWidth=1;
-
-  for(let kg=minW; kg<=maxW; kg+=1){
-    ctx.strokeStyle = kg % 5 === 0 ? "rgba(148,163,184,.26)" : "rgba(148,163,184,.11)";
-    ctx.beginPath();
-    ctx.moveTo(padL, y(kg));
-    ctx.lineTo(padL+chartW, y(kg));
-    ctx.stroke();
-  }
-
-  const d = new Date(start);
-  d.setDate(1);
-
-  while(d <= end){
-    ctx.strokeStyle = "rgba(148,163,184,.10)";
-    ctx.lineWidth = 1;
-
-    ctx.beginPath();
-    ctx.moveTo(x(d), padT);
-    ctx.lineTo(x(d), padT+chartH);
-    ctx.stroke();
-
-    d.setDate(d.getDate()+7);
-  }
-
-  const monthLine = new Date(start);
-  monthLine.setDate(1);
-
-  while(monthLine <= end){
-    ctx.strokeStyle = "#f5c451";
-    ctx.lineWidth = 3;
-
-    ctx.beginPath();
-    ctx.moveTo(x(monthLine), padT);
-    ctx.lineTo(x(monthLine), padT+chartH);
-    ctx.stroke();
-
-    monthLine.setMonth(monthLine.getMonth()+1);
-  }
-}
-
-function drawAxes(ctx, padL, padT, chartW, chartH, minW, maxW, start, end, x, y){
-  ctx.strokeStyle="#f8fafc";
-  ctx.lineWidth=2;
-  ctx.beginPath();
-  ctx.moveTo(padL, padT);
-  ctx.lineTo(padL, padT+chartH);
-  ctx.lineTo(padL+chartW, padT+chartH);
-  ctx.stroke();
-
-  ctx.fillStyle="#f8fafc";
-  ctx.font="14px Arial";
-
-  ctx.save();
-  ctx.translate(24, padT + chartH/2);
-  ctx.rotate(-Math.PI/2);
-  ctx.fillText("Weight in kg", 0, 0);
-  ctx.restore();
-
-  ctx.fillText("Months leading to proposal", padL + chartW/2 - 80, padT + chartH + 58);
-
-  for(let kg=minW; kg<=maxW; kg+=5){
-    ctx.fillStyle="#94a3b8";
-    ctx.fillText(`${kg}`, padL-42, y(kg)+4);
-  }
-
-  const month = new Date(start);
-  month.setDate(1);
-
-  while(month <= end){
-    ctx.fillStyle="#94a3b8";
-    ctx.font="13px Arial";
-    const label = month.toLocaleString("default", {month:"short"});
-    ctx.fillText(label, x(month)-12, padT+chartH+25);
-    month.setMonth(month.getMonth()+1);
-  }
-}
-
-function escapeHTML(str){
-  return String(str)
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
-}
-
-document.getElementById("weightDate").value = todayKey();
-
-autoCheckPastDays();
-getMissionsForDate(todayKey());
-motivation();
-renderCalendar();
-renderMissions();
-renderTomorrowMissions();
-drawChart();
-initSync();
-
-setInterval(motivation, 60000);
+function syncToCloud(){ if(!syncEnabled||!db||applyingCloudUpdate) return; clearTimeout(syncTimer); syncTimer=setTimeout(()=>{ db.collection("daThadiyaUsers").doc("joel").set(appState(),{merge:true}).then(()=>document.getElementById("syncStatus").textContent="Sync: saved").catch(()=>document.getElementById("syncStatus").textContent="Sync: offline, using local backup"); },500); }
+function allDailyMissions(){ return [...new Set([...defaultMissions, ...permanentMissions])]; }
+function getMissionsForDate(dateKey){ if(!missionsByDate[dateKey]) missionsByDate[dateKey]=[]; for(const m of allDailyMissions()){ if(!missionsByDate[dateKey].includes(m)) missionsByDate[dateKey].push(m); } localSave(); return missionsByDate[dateKey]; }
+function showTab(id,btn){ document.querySelectorAll(".tab,.tabBtn").forEach(x=>x.classList.remove("active")); document.getElementById(id).classList.add("active"); btn.classList.add("active"); if(id==="weight") drawChart(); }
+function motivation(){ const diff=proposalDate-new Date(); const days=Math.max(0,Math.floor(diff/86400000)); const hours=Math.max(0,Math.floor((diff%86400000)/3600000)); document.getElementById("headerMotivation").innerHTML=`Da Thadiya, welcome back! Only <b>${days} days and ${hours} hours</b> left to proposal! Work hard, you are getting close!`; }
+function evaluateDay(dateKey){ const missions=getMissionsForDate(dateKey); const done=completions[dateKey]||{}; const missed=missions.filter(m=>!done[m]); dayResults[dateKey]={status: missed.length===0 && missions.length>0 ? "green":"red", missed}; localSave(); }
+function autoCheckPastDays(){ const yKey=addDays(todayKey(),-1); if(!dayResults[yKey]) evaluateDay(yKey); }
+function missionStats(dateKey){ const missions=getMissionsForDate(dateKey); const done=completions[dateKey]||{}; const complete=missions.filter(m=>done[m]).length; return {missions, complete, total:missions.length, pct:missions.length?Math.round(complete/missions.length*100):0}; }
+function toggleMissionForDate(dateKey,index){ const missions=getMissionsForDate(dateKey); const mission=missions[index]; completions[dateKey]=completions[dateKey]||{}; completions[dateKey][mission]=!completions[dateKey][mission]; evaluateDay(dateKey); save(); renderAll(); }
+function editMissionForDate(dateKey,i,val){ const missions=getMissionsForDate(dateKey); const old=missions[i]; const updated=val.trim()||old; missions[i]=updated; if(completions[dateKey]?.[old]){ completions[dateKey][updated]=completions[dateKey][old]; delete completions[dateKey][old]; } evaluateDay(dateKey); save(); renderAll(); }
+function removeMissionForDate(dateKey,i){ if(!confirm("Remove this mission from this day?")) return; const missions=getMissionsForDate(dateKey); const removed=missions.splice(i,1)[0]; if(completions[dateKey]) delete completions[dateKey][removed]; evaluateDay(dateKey); save(); renderAll(); }
+function renderMissionCards(containerId,dateKey,editable){ const wrap=document.getElementById(containerId); wrap.innerHTML=""; const missions=getMissionsForDate(dateKey); completions[dateKey]=completions[dateKey]||{}; missions.forEach((mission,i)=>{ const done=!!completions[dateKey][mission]; const div=document.createElement("div"); div.className="mission-card"+(done?" done":""); const nameHtml=editable?`<input value="${escapeHTML(mission)}" onchange="editMissionForDate('${dateKey}',${i},this.value)" />`:`<div class="mission-name">${escapeHTML(mission)}</div>`; div.innerHTML=`<div class="mission-main"><div class="mission-check">${done?"✓":""}</div><div>${nameHtml}<div class="mission-status">${done?"Completed":"Tap complete when finished"}</div></div></div><div class="mission-actions"><button class="${done?'red':'green'}" onclick="toggleMissionForDate('${dateKey}',${i})">${done?'Undo':'Complete'}</button>${editable?`<button onclick="removeMissionForDate('${dateKey}',${i})">Remove</button>`:""}</div>`; wrap.appendChild(div); }); }
+function renderCalendar(){ const cal=document.getElementById("calendar"); cal.innerHTML=""; const y=currentMonth.getFullYear(), m=currentMonth.getMonth(); document.getElementById("monthTitle").textContent=currentMonth.toLocaleString("default",{month:"long",year:"numeric"}); ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(d=>{ const el=document.createElement("div"); el.className="dow"; el.textContent=d; cal.appendChild(el); }); const first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate(); for(let i=0;i<first;i++){ const e=document.createElement("div"); e.className="day empty"; cal.appendChild(e); } for(let d=1;d<=days;d++){ const key=getDateKey(y,m,d); const el=document.createElement("div"); el.className="day"; if(key===todayKey()) el.classList.add("today"); if(key===selectedDate) el.classList.add("selected"); if(dayResults[key]) el.classList.add(dayResults[key].status); el.textContent=d; el.onclick=()=>selectDate(key); cal.appendChild(el); } }
+function selectDate(key){ selectedDate=key; getMissionsForDate(selectedDate); renderCalendar(); renderSelectedMissions(); }
+function changeMonth(n){ currentMonth.setMonth(currentMonth.getMonth()+n); renderCalendar(); }
+function renderSelectedMissions(){ document.getElementById("selectedDateBadge").textContent=selectedDate; renderMissionCards("selectedMissionList",selectedDate,true); }
+function addMissionForSelectedDay(){ const input=document.getElementById("newMission"); const val=input.value.trim(); if(!val) return; getMissionsForDate(selectedDate).push(val); input.value=""; evaluateDay(selectedDate); save(); renderAll(); }
+function addPermanentMission(){ const input=document.getElementById("permanentMissionInput"); const val=input.value.trim(); if(!val) return; if(!permanentMissions.includes(val)) permanentMissions.push(val); addPermanentMissionToFutureDays(val); input.value=""; save(); renderAll(); }
+function addPermanentMissionToFutureDays(mission){ let d=new Date(todayKey()+"T12:00:00"); while(d<=proposalDate){ const key=dateKeyFromDate(d); missionsByDate[key]=missionsByDate[key]||[]; if(!missionsByDate[key].includes(mission)) missionsByDate[key].push(mission); d.setDate(d.getDate()+1); } }
+function removePermanentMission(i){ const mission=permanentMissions[i]; if(!confirm("Remove this permanent mission from today and future days?")) return; permanentMissions.splice(i,1); let d=new Date(todayKey()+"T12:00:00"); while(d<=proposalDate){ const key=dateKeyFromDate(d); if(missionsByDate[key]) missionsByDate[key]=missionsByDate[key].filter(m=>m!==mission); if(completions[key]) delete completions[key][mission]; d.setDate(d.getDate()+1); } save(); renderAll(); }
+function renderPermanentMissions(){ const tbody=document.getElementById("permanentMissionTable"); tbody.innerHTML=""; if(permanentMissions.length===0){ tbody.innerHTML='<tr><td colspan="2" class="small">No extra permanent missions yet.</td></tr>'; return; } permanentMissions.forEach((m,i)=>{ const tr=document.createElement("tr"); tr.innerHTML=`<td>${escapeHTML(m)}</td><td><button onclick="removePermanentMission(${i})">Remove</button></td>`; tbody.appendChild(tr); }); }
+function addTomorrowMission(){ const input=document.getElementById("tomorrowMissionInput"); const val=input.value.trim(); if(!val) return; const tomorrow=addDays(todayKey(),1); getMissionsForDate(tomorrow).push(val); input.value=""; save(); renderAll(); }
+function latestWeight(){ weights.sort((a,b)=>new Date(a.date)-new Date(b.date)); return weights[weights.length-1] || {date:todayKey(),weight:0}; }
+function weightOnDate(dateKey){ const exact=weights.find(w=>w.date===dateKey); return exact?exact.weight:latestWeight().weight; }
+function validateWeight(weight){ if(!weight || weight<85 || weight>105){ alert("Weight should be between 85 kg and 105 kg for this graph."); return false; } return true; }
+function addWeight(){ const date=document.getElementById("weightDate").value; const weight=Number(document.getElementById("weightValue").value); if(!date||!validateWeight(weight)) return; weights=weights.filter(w=>w.date!==date); weights.push({date,weight}); weights.sort((a,b)=>new Date(a.date)-new Date(b.date)); save(); renderAll(); }
+function saveTodayWeight(){ const date=document.getElementById("todayWeightDate").value; const weight=Number(document.getElementById("todayWeightValue").value); if(!date||!validateWeight(weight)) return; weights=weights.filter(w=>w.date!==date); weights.push({date,weight}); weights.sort((a,b)=>new Date(a.date)-new Date(b.date)); save(); renderAll(); }
+function adjustWeightInput(delta){ const input=document.getElementById("weightValue"); const base=Number(input.value)||latestWeight().weight; input.value=(base+delta).toFixed(1); }
+function adjustTodayWeight(delta){ const input=document.getElementById("todayWeightValue"); const base=Number(input.value)||latestWeight().weight; input.value=(base+delta).toFixed(1); }
+function saveTarget(){ const newTarget=Number(document.getElementById("targetWeightInput").value); if(!validateWeight(newTarget)) return; targetWeight=newTarget; save(); renderAll(); }
+function editWeight(date){ const item=weights.find(w=>w.date===date); if(!item) return; const val=prompt("Enter new weight for " + date, item.weight); if(val===null) return; const weight=Number(val); if(!validateWeight(weight)) return; item.weight=weight; save(); renderAll(); }
+function deleteWeight(date){ if(!confirm("Delete this weight entry?")) return; if(weights.length<=1) return alert("Keep at least one weight entry."); weights=weights.filter(w=>w.date!==date); save(); renderAll(); }
+function renderWeightHistory(){ const tbody=document.getElementById("weightHistoryTable"); tbody.innerHTML=""; document.getElementById("weightHistoryCount").textContent=`${weights.length} entries`; [...weights].sort((a,b)=>new Date(b.date)-new Date(a.date)).forEach(w=>{ const tr=document.createElement("tr"); tr.innerHTML=`<td>${w.date}</td><td>${w.weight} kg</td><td class="actions"><button onclick="editWeight('${w.date}')">Edit</button><button onclick="deleteWeight('${w.date}')">Delete</button></td>`; tbody.appendChild(tr); }); }
+function expectedWeightOn(date){ const total=proposalDate-goalStartDate; const elapsed=Math.max(0,Math.min(date-goalStartDate,total)); return goalStartWeight + ((targetWeight-goalStartWeight)*(elapsed/total)); }
+function getTrackStatus(){ const latest=latestWeight(); const expected=expectedWeightOn(new Date(latest.date+"T12:00:00")); const diff=latest.weight-expected; if(diff<=0.2) return {label:"On Track", cls:"green", diff, expected}; if(diff<=1) return {label:"Slightly Behind", cls:"", diff, expected}; return {label:"Behind", cls:"red", diff, expected}; }
+function weeklyStats(){ let complete=0,total=0,perfect=0,best={day:"-",pct:-1}; for(let i=6;i>=0;i--){ const key=addDays(todayKey(),-i); const s=missionStats(key); complete+=s.complete; total+=s.total; if(s.total && s.complete===s.total) perfect++; const label=new Date(key+"T12:00:00").toLocaleString("default",{weekday:"short"}); if(s.pct>best.pct) best={day:label,pct:s.pct}; } const last=latestWeight(); const weekAgoKey=addDays(todayKey(),-7); const before=[...weights].filter(w=>new Date(w.date)<=new Date(weekAgoKey)).pop() || weights[0]; const change=before ? (last.weight-before.weight) : 0; return {complete,total,perfect,best,change}; }
+function currentStreak(){ let streak=0; for(let i=0;i<365;i++){ const key=addDays(todayKey(),-i); const s=missionStats(key); if(s.total && s.complete===s.total) streak++; else break; } return streak; }
+function setRing(id,textId,pct,color){ const deg=Math.max(0,Math.min(100,pct))*3.6; document.getElementById(id).style.background=`conic-gradient(${color} ${deg}deg, #1e293b ${deg}deg)`; document.getElementById(textId).textContent=Math.round(Math.max(0,Math.min(100,pct)))+"%"; }
+function renderDashboard(){ const today=todayKey(); const latest=latestWeight(); const ms=missionStats(today); const diff=proposalDate-new Date(); const days=Math.max(0,Math.floor(diff/86400000)); const hours=Math.max(0,Math.floor((diff%86400000)/3600000)); const lost=Math.max(0,goalStartWeight-latest.weight); const totalToLose=goalStartWeight-targetWeight; const weightPct=totalToLose?lost/totalToLose*100:0; const timeElapsed=(new Date()-goalStartDate)/(proposalDate-goalStartDate)*100; document.getElementById("todayDateBadge").textContent=today; document.getElementById("dashCurrentWeight").textContent=latest.weight; document.getElementById("dashTargetWeight").textContent=targetWeight; document.getElementById("dashWeightLeft").textContent=Math.max(0,latest.weight-targetWeight).toFixed(1); document.getElementById("dashCountdown").textContent=`${days}d ${hours}h`; document.getElementById("dashStreak").textContent=currentStreak(); const prev=weights.length>1?weights[weights.length-2]:null; document.getElementById("dashWeightChange").textContent=prev?`${(latest.weight-prev.weight).toFixed(1)} kg from last entry`:"First entry saved"; document.getElementById("todayMissionBadge").textContent=`${ms.complete}/${ms.total} complete`; setRing("weightRing","weightRingText",weightPct,"var(--blue)"); setRing("missionRing","missionRingText",ms.pct,"var(--green)"); setRing("countdownRing","countdownRingText",100-timeElapsed,"var(--gold)"); document.getElementById("weightRingSub").textContent=`${lost.toFixed(1)} kg lost from 101 kg`; document.getElementById("missionRingSub").textContent=`${ms.complete} of ${ms.total} missions`; const status=getTrackStatus(); document.getElementById("onTrackBadge").textContent=status.label; document.getElementById("onTrackBadge").className="badge " + status.cls; document.getElementById("smartMotivation").innerHTML=smartMotivation(ms,status); renderMissionCards("todayMissionList",today,false); document.getElementById("todayWeightDate").value=today; document.getElementById("todayWeightValue").value=weightOnDate(today); renderWeeklyReport(); }
+function smartMotivation(ms,status){ if(ms.total && ms.complete===ms.total) return "Perfect day. <b>Lock it in.</b> Keep stacking clean days."; if(status.cls==="red") return `No panic. You are about <b>${status.diff.toFixed(1)} kg</b> above today’s target path. Win today’s missions and reset.`; if(latestWeight().weight<=status.expected) return "You are moving in the right direction. <b>Stay consistent today.</b>"; return "You are close. Finish today’s missions and keep the graph moving down."; }
+function renderWeeklyReport(){ const w=weeklyStats(); document.getElementById("weeklyBadge").textContent="Last 7 days"; document.getElementById("weeklyWeightChange").textContent=(w.change>=0?"+":"")+w.change.toFixed(1)+" kg"; document.getElementById("weeklyMissionCount").textContent=`${w.complete}/${w.total}`; document.getElementById("weeklyPerfectDays").textContent=w.perfect; document.getElementById("weeklyBestDay").textContent=w.best.day; const badges=[]; const streak=currentStreak(); if(streak>=3) badges.push(`${streak}-day streak`); if(streak>=7) badges.push("7-day beast mode"); if(goalStartWeight-latestWeight().weight>=5) badges.push("First 5 kg lost"); if(w.perfect>=3) badges.push("3 perfect days this week"); if(weights.length>=5) badges.push("5 weight check-ins"); if(badges.length===0) badges.push("Earn badges by completing missions and saving weight"); document.getElementById("achievementBadges").innerHTML=badges.map(b=>`<div class="badge green">${escapeHTML(b)}</div>`).join(""); }
+function renderWeightStats(){ const latest=latestWeight(); const status=getTrackStatus(); document.getElementById("currentWeightText").textContent=latest.weight; document.getElementById("targetWeightText").textContent=targetWeight; document.getElementById("targetWeightInput").value=targetWeight; document.getElementById("weightDate").value=todayKey(); document.getElementById("weightValue").value=weightOnDate(todayKey()); const totalWeeks=(proposalDate-goalStartDate)/604800000; const targetPace=(targetWeight-goalStartWeight)/totalWeeks; const first=weights[0]; const actualWeeks=Math.max(1,(new Date(latest.date)-new Date(first.date))/604800000); const actualPace=(latest.weight-first.weight)/actualWeeks; document.getElementById("targetPaceText").textContent=targetPace.toFixed(2); document.getElementById("actualPaceText").textContent=actualPace.toFixed(2); document.getElementById("graphStatusBadge").textContent=status.label; document.getElementById("graphStatusBadge").className="badge "+status.cls; document.getElementById("graphStatusText").textContent=`Expected weight by latest entry: ${status.expected.toFixed(1)} kg. Difference: ${status.diff>=0?'+':''}${status.diff.toFixed(1)} kg.`; }
+function drawChart(){ const canvas=document.getElementById("weightChart"); weights.sort((a,b)=>new Date(a.date)-new Date(b.date)); const earliestWeightDate=new Date(weights[0].date+"T00:00:00"); const earliestMonthStart=new Date(earliestWeightDate.getFullYear(),earliestWeightDate.getMonth(),1); const start=earliestMonthStart<goalStartDate?earliestMonthStart:goalStartDate; const end=proposalDate; const months=monthsBetween(start,end)+1; canvas.width=Math.max(1100,months*180); canvas.height=520; const ctx=canvas.getContext("2d"); ctx.clearRect(0,0,canvas.width,canvas.height); const padL=80,padR=40,padT=35,padB=75,chartW=canvas.width-padL-padR,chartH=canvas.height-padT-padB,minW=85,maxW=105; const x=date=>padL+((new Date(date)-start)/(end-start))*chartW; const y=kg=>padT+((maxW-kg)/(maxW-minW))*chartH; ctx.fillStyle="#020617"; ctx.fillRect(0,0,canvas.width,canvas.height); drawGraphPaper(ctx,padL,padT,chartW,chartH,minW,maxW,start,end,x,y); drawAxes(ctx,padL,padT,chartW,chartH,minW,maxW,start,end,x,y); drawMonthlyGoalMarkers(ctx,padT,chartH,end,x,y); ctx.strokeStyle="#ef4444"; ctx.lineWidth=3; ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(padL,y(targetWeight)); ctx.lineTo(padL+chartW,y(targetWeight)); ctx.stroke(); ctx.fillStyle="#ef4444"; ctx.font="15px Arial"; ctx.fillText(`Target: ${targetWeight} kg`,padL+10,y(targetWeight)-10); ctx.strokeStyle="#38bdf8"; ctx.lineWidth=4; ctx.setLineDash([]); const points=weights.map(pt=>({x:x(pt.date),y:y(pt.weight),date:pt.date,weight:pt.weight})); chartPoints=points; drawSmoothLine(ctx,points); points.forEach(pt=>{ ctx.fillStyle="#38bdf8"; ctx.beginPath(); ctx.arc(pt.x,pt.y,6,0,Math.PI*2); ctx.fill(); ctx.strokeStyle="#020617"; ctx.lineWidth=2; ctx.stroke(); ctx.fillStyle="#f8fafc"; ctx.font="12px Arial"; ctx.fillText(`${pt.weight}`,pt.x+8,pt.y-8); }); ctx.strokeStyle="#22c55e"; ctx.setLineDash([8,8]); ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(x(goalStartDate),y(goalStartWeight)); ctx.lineTo(x(proposalDate),y(targetWeight)); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle="#22c55e"; ctx.beginPath(); ctx.arc(x(goalStartDate),y(goalStartWeight),5,0,Math.PI*2); ctx.fill(); ctx.font="12px Arial"; ctx.fillText("101 kg",x(goalStartDate)+8,y(goalStartWeight)-8); ctx.fillStyle="#f8fafc"; ctx.font="bold 17px Arial"; ctx.fillText("Actual Weight vs Goal Path",padL,24); bindChartTooltip(canvas); renderWeightStats(); }
+function monthsBetween(startDate,endDate){ return (endDate.getFullYear()-startDate.getFullYear())*12+(endDate.getMonth()-startDate.getMonth()); }
+function drawSmoothLine(ctx,points){ if(!points.length) return; ctx.beginPath(); ctx.moveTo(points[0].x,points[0].y); for(let i=0;i<points.length-1;i++){ const p0=points[i-1]||points[i], p1=points[i], p2=points[i+1], p3=points[i+2]||p2; for(let t=0;t<=1;t+=0.08){ const tt=t*t, ttt=tt*t; const x=0.5*((2*p1.x)+(-p0.x+p2.x)*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*tt+(-p0.x+3*p1.x-3*p2.x+p3.x)*ttt); const y=0.5*((2*p1.y)+(-p0.y+p2.y)*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*tt+(-p0.y+3*p1.y-3*p2.y+p3.y)*ttt); ctx.lineTo(x,y); } } ctx.lineTo(points[points.length-1].x,points[points.length-1].y); ctx.stroke(); }
+function drawGraphPaper(ctx,padL,padT,chartW,chartH,minW,maxW,start,end,x,y){ ctx.lineWidth=1; for(let kg=minW;kg<=maxW;kg+=1){ ctx.strokeStyle=kg%5===0?"rgba(148,163,184,.26)":"rgba(148,163,184,.11)"; ctx.beginPath(); ctx.moveTo(padL,y(kg)); ctx.lineTo(padL+chartW,y(kg)); ctx.stroke(); } const d=new Date(start); d.setDate(1); while(d<=end){ ctx.strokeStyle="rgba(245,196,81,.62)"; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(x(d),padT); ctx.lineTo(x(d),padT+chartH); ctx.stroke(); d.setMonth(d.getMonth()+1); } }
+function drawMonthlyGoalMarkers(ctx,padT,chartH,end,x,y){ const d=new Date(goalStartDate); d.setDate(1); while(d<=end){ const expected=expectedWeightOn(d); ctx.fillStyle="rgba(34,197,94,.85)"; ctx.beginPath(); ctx.arc(x(d),y(expected),3,0,Math.PI*2); ctx.fill(); ctx.font="11px Arial"; ctx.fillText(expected.toFixed(1),x(d)+5,y(expected)-5); d.setMonth(d.getMonth()+1); } }
+function drawAxes(ctx,padL,padT,chartW,chartH,minW,maxW,start,end,x,y){ ctx.strokeStyle="#f8fafc"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(padL,padT); ctx.lineTo(padL,padT+chartH); ctx.lineTo(padL+chartW,padT+chartH); ctx.stroke(); ctx.fillStyle="#f8fafc"; ctx.font="14px Arial"; ctx.save(); ctx.translate(24,padT+chartH/2); ctx.rotate(-Math.PI/2); ctx.fillText("Weight in kg",0,0); ctx.restore(); ctx.fillText("Months leading to proposal",padL+chartW/2-80,padT+chartH+58); for(let kg=minW;kg<=maxW;kg+=5){ ctx.fillStyle="#94a3b8"; ctx.fillText(`${kg}`,padL-42,y(kg)+4); } const month=new Date(start); month.setDate(1); while(month<=end){ ctx.fillStyle="#94a3b8"; ctx.font="13px Arial"; const label=month.toLocaleString("default",{month:"short"}); ctx.fillText(label,x(month)-12,padT+chartH+25); month.setMonth(month.getMonth()+1); } }
+function bindChartTooltip(canvas){ const tip=document.getElementById("chartTooltip"); canvas.onmousemove=e=>{ const rect=canvas.getBoundingClientRect(); const sx=canvas.width/rect.width, sy=canvas.height/rect.height; const mx=(e.clientX-rect.left)*sx, my=(e.clientY-rect.top)*sy; let near=null,dist=999; chartPoints.forEach(p=>{ const d=Math.hypot(p.x-mx,p.y-my); if(d<dist){dist=d; near=p;} }); if(near&&dist<18){ tip.style.display="block"; tip.style.left=(e.clientX-rect.left+16)+"px"; tip.style.top=(e.clientY-rect.top+16)+"px"; tip.innerHTML=`${near.date}<br><b>${near.weight} kg</b>`; } else tip.style.display="none"; }; canvas.onmouseleave=()=>tip.style.display="none"; }
+function renderAll(){ getMissionsForDate(todayKey()); motivation(); renderDashboard(); renderCalendar(); renderSelectedMissions(); renderPermanentMissions(); renderWeightHistory(); drawChart(); }
+document.getElementById("weightDate").value=todayKey(); document.getElementById("todayWeightDate").value=todayKey();
+autoCheckPastDays(); renderAll(); initSync(); setInterval(()=>{ motivation(); renderDashboard(); },60000);
 </script>
-
 </body>
 </html>
