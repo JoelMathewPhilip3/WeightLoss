@@ -177,24 +177,22 @@ table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:11px;bor
         <div class="form-field"><label for="missionDuration">How long?</label><select id="missionDuration" onchange="updateMissionEditor()"><option value="permanent">Permanent</option><option value="temporary">Temporary</option></select></div>
         <div class="form-field full" id="addMissionNameField"><label for="editorMissionName">Mission name</label><input id="editorMissionName" placeholder="Example: Walk for 30 minutes" /></div>
         <div class="form-field full hidden" id="removeMissionNameField"><label for="editorMissionRemove">Mission to remove</label><select id="editorMissionRemove"></select></div>
-        <div class="form-field"><label for="missionStartDate">Start date</label><input type="date" id="missionStartDate" /></div>
-        <div class="form-field hidden" id="missionEndField"><label for="missionEndDate">End date</label><input type="date" id="missionEndDate" /></div>
+        <div class="form-field"><label for="missionStartDate">Start date</label><input type="date" id="missionStartDate" onclick="openDatePicker(this)" /></div>
+        <div class="form-field hidden" id="missionEndField"><label for="missionEndDate">End date</label><input type="date" id="missionEndDate" onclick="openDatePicker(this)" /></div>
         <div class="form-field full" id="weekdayChoiceField"><label for="missionEveryDay">Repeat</label><select id="missionEveryDay" onchange="updateMissionEditor()"><option value="yes">Every day of the week</option><option value="no">Selected weekdays</option></select></div>
         <div class="form-field full hidden" id="weekdayPickerField"><label>Days of the week</label><div class="weekday-picker" id="weekdayPicker"></div></div>
         <div class="form-field full"><button class="gold" onclick="saveMissionRule()">Save Mission Change</button></div>
       </div>
-      <table><thead><tr><th>Mission Change</th><th>Schedule</th><th>Action</th></tr></thead><tbody id="missionRulesTable"></tbody></table>
     </div>
     <div class="card">
       <div class="section-title"><h2>Trip Planner</h2><div class="badge">Calendar Tracking</div></div>
       <p class="small">Trips are tracked separately and do not change your missions.</p>
       <div class="form-grid">
         <div class="form-field full"><label for="plannerTripLocation">Country or place</label><input id="plannerTripLocation" placeholder="Example: Ireland, Dallas, or Toronto" /></div>
-        <div class="form-field"><label for="plannerTripStart">Trip starts</label><input type="date" id="plannerTripStart" /></div>
-        <div class="form-field"><label for="plannerTripEnd">Trip ends</label><input type="date" id="plannerTripEnd" /></div>
+        <div class="form-field"><label for="plannerTripStart">Trip starts</label><input type="date" id="plannerTripStart" onclick="openDatePicker(this)" /></div>
+        <div class="form-field"><label for="plannerTripEnd">Trip ends</label><input type="date" id="plannerTripEnd" onclick="openDatePicker(this)" /></div>
         <div class="form-field full"><button class="gold" onclick="addTrip()">Add Trip to Calendar</button></div>
       </div>
-      <table><thead><tr><th>Destination</th><th>Travel Dates</th><th>Action</th></tr></thead><tbody id="tripsTable"></tbody></table>
     </div>
   </section>
 
@@ -281,6 +279,7 @@ function todayKey(){ return atlantaDateKey(new Date()); }
 function dateKeyFromDate(d){ return atlantaDateKey(d); }
 function getDateKey(y,m,d){ return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
 function addDays(dateKey,days){ const [y,m,d]=dateKey.split("-").map(Number); const next=new Date(Date.UTC(y,m-1,d+days)); return `${next.getUTCFullYear()}-${String(next.getUTCMonth()+1).padStart(2,"0")}-${String(next.getUTCDate()).padStart(2,"0")}`; }
+function openDatePicker(input){ try{ if(input.showPicker) input.showPicker(); }catch(e){} }
 function escapeHTML(str){ return String(str).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
 function ensureWeightBaseline(){ if(!weights.some(w=>w.date==="2026-04-25")) weights.push({date:"2026-04-25",weight:100.8}); weights.sort((a,b)=>new Date(a.date)-new Date(b.date)); }
 function migrateLegacyTrips(){ missionRules.forEach(r=>{ if(r.reason==="trip"&&r.location&&r.tripStart&&r.tripEnd&&!trips.some(t=>t.location===r.location&&t.startDate===r.tripStart&&t.endDate===r.tripEnd)) trips.push({id:`trip-${r.id||Date.now()}`,location:r.location,startDate:r.tripStart,endDate:r.tripEnd}); }); }
@@ -326,7 +325,7 @@ function tripsForDate(dateKey){ return trips.filter(t=>t.startDate<=dateKey && t
 function renderCalendar(){ const cal=document.getElementById("calendar"); cal.innerHTML=""; const y=currentMonth.getFullYear(), m=currentMonth.getMonth(); document.getElementById("monthTitle").textContent=currentMonth.toLocaleString("default",{month:"long",year:"numeric"}); ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(d=>{ const el=document.createElement("div"); el.className="dow"; el.textContent=d; cal.appendChild(el); }); const first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate(); for(let i=0;i<first;i++){ const e=document.createElement("div"); e.className="day empty"; cal.appendChild(e); } for(let d=1;d<=days;d++){ const key=getDateKey(y,m,d); const el=document.createElement("div"); el.className="day"; const stats=missionStats(key); const dayTrips=tripsForDate(key); const savedWeight=weights.find(w=>w.date===key); const shade=calendarShade(stats.pct,stats.total); el.style.background=shade.bg; el.style.borderColor=shade.border; if(key===todayKey()) el.classList.add("today"); if(key===selectedDate) el.classList.add("selected"); el.innerHTML=`<div class="day-num">${d}</div><div class="day-pct">${stats.pct}%</div>${savedWeight?`<div class="day-weight">${savedWeight.weight} kg</div>`:""}${dayTrips.map(t=>`<div class="day-trip">Trip: ${escapeHTML(t.location)}</div>`).join("")}`; el.title=`${stats.complete}/${stats.total} missions complete${savedWeight?` | Weight: ${savedWeight.weight} kg`:""}${dayTrips.length?` | Traveling to ${dayTrips.map(t=>t.location).join(", ")}`:""}`; el.onclick=()=>selectDate(key); cal.appendChild(el); } }
 function selectDate(key){ selectedDate=key; getMissionsForDate(selectedDate); renderCalendar(); renderSelectedMissions(); }
 function changeMonth(n){ currentMonth.setMonth(currentMonth.getMonth()+n); renderCalendar(); }
-function renderSelectedMissions(){ document.getElementById("selectedDateBadge").textContent=selectedDate; const dayTrips=tripsForDate(selectedDate); document.getElementById("selectedTravelNote").innerHTML=dayTrips.map(t=>`<div class="travel-note">Traveling to ${escapeHTML(t.location)}: ${t.startDate} to ${t.endDate}</div>`).join(""); renderMissionCards("selectedMissionList",selectedDate,true); }
+function renderSelectedMissions(){ document.getElementById("selectedDateBadge").textContent=selectedDate; const dayTrips=tripsForDate(selectedDate); document.getElementById("selectedTravelNote").innerHTML=dayTrips.map(t=>`<div class="travel-note">Traveling to ${escapeHTML(t.location)}: ${t.startDate} to ${t.endDate} <button class="red" onclick="removeTrip('${t.id}')">Remove Trip</button></div>`).join(""); renderMissionCards("selectedMissionList",selectedDate,true); }
 function addMissionForSelectedDay(){ const input=document.getElementById("newMission"); const val=input.value.trim(); if(!val) return; missionsByDate[selectedDate]=[...new Set([...(missionsByDate[selectedDate]||[]),val])]; excludedMissionsByDate[selectedDate]=(excludedMissionsByDate[selectedDate]||[]).filter(m=>m!==val); input.value=""; evaluateDay(selectedDate); save(); renderAll(); }
 function allKnownMissionNames(){ const names=new Set([...defaultMissions,...permanentMissions]); Object.values(missionsByDate).forEach(list=>(list||[]).forEach(m=>names.add(m))); missionRules.filter(r=>r.action==="add").forEach(r=>names.add(r.name)); return [...names].sort(); }
 function updateMissionEditor(){
@@ -576,14 +575,14 @@ function drawAxes(ctx,padL,padT,chartW,chartH,minW,maxW,start,end,x,y,g){
   }
 }
 function bindChartTooltip(canvas){ const tip=document.getElementById("chartTooltip"); canvas.onmousemove=e=>{ const rect=canvas.getBoundingClientRect(); const sx=canvas.width/rect.width, sy=canvas.height/rect.height; const mx=(e.clientX-rect.left)*sx, my=(e.clientY-rect.top)*sy; let near=null,dist=999; chartPoints.forEach(p=>{ const d=Math.hypot(p.x-mx,p.y-my); if(d<dist){dist=d; near=p;} }); if(near&&dist<18){ tip.style.display="block"; tip.style.left=(e.clientX-rect.left+16)+"px"; tip.style.top=(e.clientY-rect.top+16)+"px"; tip.innerHTML=`${near.date}<br><b>${near.weight} kg</b>`; } else tip.style.display="none"; }; canvas.onmouseleave=()=>tip.style.display="none"; }
-function renderAll(){ motivation(); renderDashboard(); renderCalendar(); renderSelectedMissions(); renderCalendarMissionSections(); renderMissionRules(); renderTrips(); updateMissionEditor(); renderWeightHistory(); drawChart(); }
+function renderAll(){ motivation(); renderDashboard(); renderCalendar(); renderSelectedMissions(); renderCalendarMissionSections(); updateMissionEditor(); renderWeightHistory(); drawChart(); }
 document.getElementById("weightDate").value=todayKey(); document.getElementById("todayWeightDate").value=todayKey();
 document.getElementById("missionStartDate").value=todayKey();
 document.getElementById("missionEndDate").value=addDays(todayKey(),7);
 document.getElementById("plannerTripStart").value=todayKey();
 document.getElementById("plannerTripEnd").value=addDays(todayKey(),7);
 document.getElementById("weekdayPicker").innerHTML=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"].map((d,i)=>`<label><input type="checkbox" value="${i}">${d}</label>`).join("");
-migrateLegacyTrips(); ensureWeightBaseline(); autoCheckPastDays(); renderAll(); initSync(); setInterval(()=>{ motivation(); renderDashboard(); renderMissionRules(); },60000);
+migrateLegacyTrips(); ensureWeightBaseline(); autoCheckPastDays(); renderAll(); initSync(); setInterval(()=>{ motivation(); renderDashboard(); },60000);
 </script>
 </body>
 </html>
