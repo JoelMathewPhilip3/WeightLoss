@@ -239,7 +239,7 @@ const weddingDate = new Date("2027-01-03T12:00:00+05:30");
 const goalStartDate = new Date("2026-04-25T00:00:00");
 const goalStartWeight = 100.8;
 const defaultMissions = ["10,000 steps","Drink three glasses of water","Read 10 minutes","Clean room by end of day","Read the Bible and say a prayer","Brush teeth"];
-let currentMonth = new Date();
+let currentMonth = new Date(todayKey()+"T12:00:00");
 let selectedDate = todayKey();
 let missionsByDate = JSON.parse(localStorage.getItem("missionsByDate")) || {};
 let permanentMissions = JSON.parse(localStorage.getItem("permanentMissions")) || [];
@@ -272,10 +272,15 @@ function countdownParts(goalDate){
   const hours = Math.max(0, Math.floor((diff % 86400000) / 3600000));
   return {days, hours};
 }
-function todayKey(){ return new Date().toISOString().slice(0,10); }
-function dateKeyFromDate(d){ return d.toISOString().slice(0,10); }
+function atlantaDateKey(date){
+  const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(date);
+  const values=Object.fromEntries(parts.map(p=>[p.type,p.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+function todayKey(){ return atlantaDateKey(new Date()); }
+function dateKeyFromDate(d){ return atlantaDateKey(d); }
 function getDateKey(y,m,d){ return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
-function addDays(dateKey, days){ const d = new Date(dateKey + "T12:00:00"); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); }
+function addDays(dateKey,days){ const [y,m,d]=dateKey.split("-").map(Number); const next=new Date(Date.UTC(y,m-1,d+days)); return `${next.getUTCFullYear()}-${String(next.getUTCMonth()+1).padStart(2,"0")}-${String(next.getUTCDate()).padStart(2,"0")}`; }
 function escapeHTML(str){ return String(str).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
 function ensureWeightBaseline(){ if(!weights.some(w=>w.date==="2026-04-25")) weights.push({date:"2026-04-25",weight:100.8}); weights.sort((a,b)=>new Date(a.date)-new Date(b.date)); }
 function migrateLegacyTrips(){ missionRules.forEach(r=>{ if(r.reason==="trip"&&r.location&&r.tripStart&&r.tripEnd&&!trips.some(t=>t.location===r.location&&t.startDate===r.tripStart&&t.endDate===r.tripEnd)) trips.push({id:`trip-${r.id||Date.now()}`,location:r.location,startDate:r.tripStart,endDate:r.tripEnd}); }); }
