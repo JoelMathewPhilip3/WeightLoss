@@ -163,18 +163,10 @@ table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:11px;bor
       <p class="small">A day turns green when every mission is complete. It turns red when at least one is missed.</p>
     </div>
     <div class="card">
-      <div class="section-title"><h2>Today's Missions</h2><div class="badge" id="calendarTodayBadge"></div></div>
-      <div class="mission-list" id="calendarTodayMissionList"></div>
-    </div>
-    <div class="card">
-      <div class="section-title"><h2>Tomorrow's Missions</h2><div class="badge" id="tomorrowDateBadge"></div></div>
-      <div class="mission-list" id="tomorrowMissionList"></div>
-    </div>
-    <div class="card">
       <div class="section-title"><h2>Edit Missions</h2><div class="badge">Schedule</div></div>
       <div class="form-grid">
         <div class="form-field"><label for="missionAction">What would you like to do?</label><select id="missionAction" onchange="updateMissionEditor()"><option value="add">Add a mission</option><option value="remove">Remove a mission</option></select></div>
-        <div class="form-field"><label for="missionDuration">How long?</label><select id="missionDuration" onchange="updateMissionEditor()"><option value="permanent">Permanent</option><option value="temporary">Temporary</option></select></div>
+        <div class="form-field"><label for="missionDuration">How long?</label><select id="missionDuration" onchange="updateMissionEditor()"><option value="one-day">One day</option><option value="permanent">Permanent</option><option value="temporary">Temporary</option></select></div>
         <div class="form-field full" id="addMissionNameField"><label for="editorMissionName">Mission name</label><input id="editorMissionName" placeholder="Example: Walk for 30 minutes" /></div>
         <div class="form-field full hidden" id="removeMissionNameField"><label for="editorMissionRemove">Mission to remove</label><select id="editorMissionRemove"></select></div>
         <div class="form-field"><label for="missionStartDate">Start date</label><input type="date" id="missionStartDate" onclick="openDatePicker(this)" /></div>
@@ -296,6 +288,7 @@ function initSync(){
 }
 function syncToCloud(){ if(!syncEnabled||!db||applyingCloudUpdate) return; clearTimeout(syncTimer); syncTimer=setTimeout(()=>{ db.collection("daThadiyaUsers").doc("joel").set(appState(),{merge:true}).then(()=>document.getElementById("syncStatus").textContent="Sync: saved").catch(()=>document.getElementById("syncStatus").textContent="Sync: offline, using local backup"); },500); }
 function ruleApplies(rule,dateKey){
+  if(rule.duration==="one-day") return dateKey===rule.startDate;
   if(dateKey < rule.startDate) return false;
   if(rule.duration==="temporary" && dateKey > rule.endDate) return false;
   const weekday=new Date(dateKey+"T12:00:00").getDay();
@@ -331,12 +324,12 @@ function allKnownMissionNames(){ const names=new Set([...defaultMissions,...perm
 function updateMissionEditor(){
   const action=document.getElementById("missionAction").value;
   const duration=document.getElementById("missionDuration").value;
-  const add=action==="add", temporary=duration==="temporary";
+  const add=action==="add", temporary=duration==="temporary", oneDay=duration==="one-day";
   document.getElementById("addMissionNameField").classList.toggle("hidden",!add);
   document.getElementById("removeMissionNameField").classList.toggle("hidden",add);
   document.getElementById("missionEndField").classList.toggle("hidden",!temporary);
-  document.getElementById("weekdayChoiceField").classList.toggle("hidden",!add);
-  document.getElementById("weekdayPickerField").classList.toggle("hidden",!add||document.getElementById("missionEveryDay").value==="yes");
+  document.getElementById("weekdayChoiceField").classList.toggle("hidden",!add||oneDay);
+  document.getElementById("weekdayPickerField").classList.toggle("hidden",!add||oneDay||document.getElementById("missionEveryDay").value==="yes");
   const select=document.getElementById("editorMissionRemove"); const current=select.value;
   select.innerHTML=allKnownMissionNames().map(m=>`<option value="${escapeHTML(m)}">${escapeHTML(m)}</option>`).join("");
   if([...select.options].some(o=>o.value===current)) select.value=current;
@@ -346,12 +339,12 @@ function saveMissionRule(){
   const duration=document.getElementById("missionDuration").value;
   const name=(action==="add"?document.getElementById("editorMissionName").value:document.getElementById("editorMissionRemove").value).trim();
   const startDate=document.getElementById("missionStartDate").value;
-  const endDate=duration==="temporary"?document.getElementById("missionEndDate").value:"9999-12-31";
+  const endDate=duration==="temporary"?document.getElementById("missionEndDate").value:(duration==="one-day"?startDate:"9999-12-31");
   if(!name||!startDate) return alert("Enter a mission and start date.");
   if(duration==="temporary"&&(!endDate||endDate<startDate)) return alert("Choose an end date on or after the start date.");
   let days=[];
-  if(action==="add"&&document.getElementById("missionEveryDay").value==="no") days=[...document.querySelectorAll('#weekdayPicker input:checked')].map(i=>Number(i.value));
-  if(action==="add"&&document.getElementById("missionEveryDay").value==="no"&&!days.length) return alert("Choose at least one weekday.");
+  if(action==="add"&&duration!=="one-day"&&document.getElementById("missionEveryDay").value==="no") days=[...document.querySelectorAll('#weekdayPicker input:checked')].map(i=>Number(i.value));
+  if(action==="add"&&duration!=="one-day"&&document.getElementById("missionEveryDay").value==="no"&&!days.length) return alert("Choose at least one weekday.");
   missionRules.push({id:Date.now().toString(36),action,duration,name,startDate,endDate,days});
   document.getElementById("editorMissionName").value="";
   save(); renderAll();
@@ -365,7 +358,6 @@ function renderMissionRules(){
   if(!activeRules.length){ tbody.innerHTML='<tr><td colspan="3" class="small">No active mission changes.</td></tr>'; return; }
   tbody.innerHTML=activeRules.map(r=>`<tr><td><b>${r.action==="add"?"Add":"Remove"}</b>: ${escapeHTML(r.name)}</td><td>${r.duration==="permanent"?`From ${r.startDate}`:`${r.startDate} to ${r.endDate}`}<br><span class="small">${r.days?.length?r.days.map(d=>dayNames[d]).join(", "):"Every day"}</span></td><td><button class="red" onclick="deleteMissionRule('${r.id}')">Remove Change</button></td></tr>`).join("");
 }
-function renderCalendarMissionSections(){ const today=todayKey(), tomorrow=addDays(today,1); document.getElementById("calendarTodayBadge").textContent=today; document.getElementById("tomorrowDateBadge").textContent=tomorrow; renderMissionCards("calendarTodayMissionList",today,false); renderMissionCards("tomorrowMissionList",tomorrow,false); }
 function addTrip(){
   const location=document.getElementById("plannerTripLocation").value.trim();
   const startDate=document.getElementById("plannerTripStart").value;
@@ -575,7 +567,7 @@ function drawAxes(ctx,padL,padT,chartW,chartH,minW,maxW,start,end,x,y,g){
   }
 }
 function bindChartTooltip(canvas){ const tip=document.getElementById("chartTooltip"); canvas.onmousemove=e=>{ const rect=canvas.getBoundingClientRect(); const sx=canvas.width/rect.width, sy=canvas.height/rect.height; const mx=(e.clientX-rect.left)*sx, my=(e.clientY-rect.top)*sy; let near=null,dist=999; chartPoints.forEach(p=>{ const d=Math.hypot(p.x-mx,p.y-my); if(d<dist){dist=d; near=p;} }); if(near&&dist<18){ tip.style.display="block"; tip.style.left=(e.clientX-rect.left+16)+"px"; tip.style.top=(e.clientY-rect.top+16)+"px"; tip.innerHTML=`${near.date}<br><b>${near.weight} kg</b>`; } else tip.style.display="none"; }; canvas.onmouseleave=()=>tip.style.display="none"; }
-function renderAll(){ motivation(); renderDashboard(); renderCalendar(); renderSelectedMissions(); renderCalendarMissionSections(); updateMissionEditor(); renderWeightHistory(); drawChart(); }
+function renderAll(){ motivation(); renderDashboard(); renderCalendar(); renderSelectedMissions(); updateMissionEditor(); renderWeightHistory(); drawChart(); }
 document.getElementById("weightDate").value=todayKey(); document.getElementById("todayWeightDate").value=todayKey();
 document.getElementById("missionStartDate").value=todayKey();
 document.getElementById("missionEndDate").value=addDays(todayKey(),7);
