@@ -36,12 +36,15 @@ class MainActivity : Activity() {
 
     private val collectionName = "daThadiyaUsers"
     private val documentName = "joel"
-    private val today = todayKey()
+    private var currentAtlantaDate = todayKey()
+    private var selectedDate = currentAtlantaDate
 
     private var missionsByDate: MutableMap<String, Any> = mutableMapOf()
     private var completions: MutableMap<String, Any> = mutableMapOf()
     private var dayResults: MutableMap<String, Any> = mutableMapOf()
     private var permanentMissions: MutableList<String> = mutableListOf()
+    private var missionRules: List<Map<String, Any>> = emptyList()
+    private var excludedMissionsByDate: MutableMap<String, Any> = mutableMapOf()
     private var weights: MutableList<MutableMap<String, Any>> = mutableListOf()
     private var targetWeight: Double = 91.0
     private var tempWeight: Double = 98.7
@@ -64,6 +67,11 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        val newAtlantaDate = todayKey()
+        if (selectedDate == currentAtlantaDate) {
+            selectedDate = newAtlantaDate
+        }
+        currentAtlantaDate = newAtlantaDate
         if (::db.isInitialized) fetchOnce()
     }
 
@@ -106,7 +114,7 @@ class MainActivity : Activity() {
         summaryCard = LinearLayout(this)
         summaryCard.orientation = LinearLayout.VERTICAL
         summaryCard.gravity = Gravity.CENTER
-        summaryCard.setPadding(dp(10), dp(12), dp(10), dp(14))
+        summaryCard.setPadding(0, dp(12), 0, dp(14))
         root.addView(summaryCard, matchWrap(top = 12))
 
         missionContainer = LinearLayout(this)
@@ -133,7 +141,7 @@ class MainActivity : Activity() {
             .addOnSuccessListener { snapshot ->
                 if (snapshot.exists()) {
                     applyCloudData(snapshot.data ?: emptyMap())
-                    ensureTodayMissions()
+                    ensureSelectedDateMissions()
                     renderAll()
                     statusText.text = "Sync: loaded"
                 } else {
@@ -156,6 +164,14 @@ class MainActivity : Activity() {
             ?.toMutableList()
             ?: mutableListOf()
 
+        missionRules = (data["missionRules"] as? List<*>)
+            ?.mapNotNull { it as? Map<String, Any> }
+            ?: emptyList()
+
+        excludedMissionsByDate =
+            (data["excludedMissionsByDate"] as? Map<String, Any>)?.toMutableMap()
+                ?: mutableMapOf()
+
         targetWeight = when (val t = data["targetWeight"]) {
             is Number -> t.toDouble()
             is String -> t.toDoubleOrNull() ?: 91.0
@@ -169,11 +185,13 @@ class MainActivity : Activity() {
     }
 
     private fun createInitialDocument() {
-        missionsByDate[today] = defaultMissions
-        completions[today] = mutableMapOf<String, Boolean>()
+        val currentDate = todayKey()
+        selectedDate = currentDate
+        missionsByDate[currentDate] = defaultMissions
+        completions[currentDate] = mutableMapOf<String, Boolean>()
         weights = mutableListOf(
             mutableMapOf(
-                "date" to today,
+                "date" to currentDate,
                 "weight" to tempWeight
             )
         )
@@ -197,15 +215,10 @@ class MainActivity : Activity() {
             }
     }
 
-    private fun ensureTodayMissions() {
-        val existing = todayMissions().toMutableList()
-
-        val combined = linkedSetOf<String>()
-        combined.addAll(defaultMissions)
-        combined.addAll(permanentMissions)
-        combined.addAll(existing)
-
-        missionsByDate[today] = combined.toList()
+    private fun ensureSelectedDateMissions() {
+        if (!completions.containsKey(selectedDate)) {
+            completions[selectedDate] = mutableMapOf<String, Boolean>()
+        }
     }
 
     private fun renderAll() {
@@ -216,59 +229,78 @@ class MainActivity : Activity() {
 
     private fun renderSummary() {
         summaryCard.removeAllViews()
-        summaryCard.background = roundedCard("#101418", GOLD, 18f)
+        summaryCard.background = null
+        summaryCard.orientation = LinearLayout.VERTICAL
+        summaryCard.gravity = Gravity.CENTER
 
         val stats = missionStats()
-        val streak = currentStreak()
         val pctColor = progressColor(stats.percent)
 
-        val todayLabel = text("Today", 14f, MUTED, true)
-        todayLabel.gravity = Gravity.CENTER
-        summaryCard.addView(todayLabel, matchWrap())
-
-        val doneLine = text("${stats.done} / ${stats.total} missions done", 17f, WHITE, true)
-        doneLine.gravity = Gravity.CENTER
-        summaryCard.addView(doneLine, matchWrap(top = 4))
-
-        val pct = text("${stats.percent}%", 34f, pctColor, true)
-        pct.gravity = Gravity.CENTER
-        summaryCard.addView(pct, matchWrap(top = 2))
+        val circleRow = LinearLayout(this)
+        circleRow.orientation = LinearLayout.HORIZONTAL
+        circleRow.gravity = Gravity.CENTER
 
         val ring = ProgressRingView(this)
         ring.progress = stats.percent
         ring.ringColor = pctColor
 
-        val ringParams = LinearLayout.LayoutParams(dp(124), dp(124))
-        ringParams.setMargins(0, dp(8), 0, dp(8))
-        summaryCard.addView(ring, ringParams)
+        val missionParams = LinearLayout.LayoutParams(dp(88), dp(88))
+        missionParams.setMargins(dp(2), 0, dp(2), 0)
+        circleRow.addView(ring, missionParams)
 
-        val weight = text("Weight", 12f, MUTED, true)
-        weight.gravity = Gravity.CENTER
-        summaryCard.addView(weight, matchWrap())
+        val weightCircle = LinearLayout(this)
+        weightCircle.orientation = LinearLayout.VERTICAL
+        weightCircle.gravity = Gravity.CENTER
+        weightCircle.setPadding(dp(8), dp(8), dp(8), dp(8))
+        weightCircle.background = roundedCard("#101418", CYAN, 44f)
 
-        val weightValue = text(String.format(Locale.US, "%.1f kg", tempWeight), 22f, CYAN, true)
+        val weightLabel = text("WEIGHT", 10f, MUTED, true)
+        weightLabel.gravity = Gravity.CENTER
+        weightCircle.addView(weightLabel, matchWrap())
+
+        val weightValue = text(
+            String.format(Locale.US, "%.1f kg", tempWeight),
+            15f,
+            CYAN,
+            true
+        )
         weightValue.gravity = Gravity.CENTER
-        summaryCard.addView(weightValue, matchWrap(top = 2))
+        weightCircle.addView(weightValue, matchWrap(top = 3))
 
-        val streakText = text("Streak  •  $streak days", 14f, GOLD, true)
-        streakText.gravity = Gravity.CENTER
-        summaryCard.addView(streakText, matchWrap(top = 8))
+        val weightParams = LinearLayout.LayoutParams(dp(88), dp(88))
+        weightParams.setMargins(dp(2), 0, dp(2), 0)
+        circleRow.addView(weightCircle, weightParams)
 
-        val hint = text("Scroll for missions and weight", 10f, MUTED, false)
-        hint.gravity = Gravity.CENTER
-        summaryCard.addView(hint, matchWrap(top = 8))
+        summaryCard.addView(circleRow, matchWrap())
+
+        val navigation = LinearLayout(this)
+        navigation.orientation = LinearLayout.HORIZONTAL
+        navigation.gravity = Gravity.CENTER
+
+        val previousDay = pillButton("-", DARK_CARD, WHITE)
+        previousDay.setOnClickListener { changeMissionDay(-1) }
+        navigation.addView(previousDay, fixedWrap(42, 40))
+
+        val dateLabel = text(selectedDateLabel(), 13f, GOLD, true)
+        dateLabel.gravity = Gravity.CENTER
+        navigation.addView(dateLabel, fixedWrap(92, 40))
+
+        val nextDay = pillButton("+", DARK_CARD, WHITE)
+        nextDay.setOnClickListener { changeMissionDay(1) }
+        navigation.addView(nextDay, fixedWrap(42, 40))
+
+        summaryCard.addView(navigation, matchWrap(top = 10))
     }
 
     private fun renderMissions() {
         missionContainer.removeAllViews()
 
-        val missions = todayMissions()
-        val doneMap = todayCompletions()
-        val total = missions.size.coerceAtLeast(1)
+        val missions = selectedMissions()
+        val doneMap = selectedCompletions()
 
-        missions.forEachIndexed { index, mission ->
+        missions.forEach { mission ->
             val done = doneMap[mission] as? Boolean ?: false
-            val card = missionCard(index + 1, total, mission, done)
+            val card = missionCard(mission, done)
 
             card.setOnClickListener {
                 toggleMission(mission)
@@ -280,7 +312,7 @@ class MainActivity : Activity() {
         val stats = missionStats()
         if (stats.percent == 100) {
             val perfect = text(
-                "✓ Perfect Day\n${stats.done} / ${stats.total} complete",
+                "✓ Perfect Day",
                 18f,
                 GREEN,
                 true
@@ -330,7 +362,7 @@ class MainActivity : Activity() {
         weightScreen.addView(refresh, fixedWrap(160, 42, top = 4))
     }
 
-    private fun missionCard(number: Int, total: Int, mission: String, done: Boolean): LinearLayout {
+    private fun missionCard(mission: String, done: Boolean): LinearLayout {
         val size = dp(190)
 
         val card = LinearLayout(this)
@@ -343,14 +375,10 @@ class MainActivity : Activity() {
 
         card.background = roundedCard(fill, color, 95f)
 
-        val progress = text("$number / $total", 12f, if (done) GREEN else GOLD, true)
-        progress.gravity = Gravity.CENTER
-        card.addView(progress, matchWrap())
-
         val title = text(shortMission(mission), 19f, WHITE, true)
         title.gravity = Gravity.CENTER
         title.maxLines = 4
-        card.addView(title, matchWrap(top = 12))
+        card.addView(title, matchWrap())
 
         val tap = text(if (done) "Tap to undo" else "Tap to complete", 11f, MUTED, false)
         tap.gravity = Gravity.CENTER
@@ -366,12 +394,12 @@ class MainActivity : Activity() {
     private fun toggleMission(mission: String) {
         val statsBefore = missionStats()
 
-        val doneMap = todayCompletions()
+        val doneMap = selectedCompletions()
         val current = doneMap[mission] as? Boolean ?: false
         val newValue = !current
 
         doneMap[mission] = newValue
-        completions[today] = doneMap
+        completions[selectedDate] = doneMap
 
         updateDayResult()
         renderAll()
@@ -388,8 +416,8 @@ class MainActivity : Activity() {
             .document(documentName)
             .set(
                 mapOf(
-                    "completions" to mapOf(today to doneMap),
-                    "dayResults" to mapOf(today to dayResults[today]),
+                        "completions" to mapOf(selectedDate to doneMap),
+                        "dayResults" to mapOf(selectedDate to dayResults[selectedDate]),
                     "updatedAt" to System.currentTimeMillis()
                 ),
                 SetOptions.merge()
@@ -403,13 +431,15 @@ class MainActivity : Activity() {
     }
 
     private fun saveWeight() {
+        val weightDate = todayKey()
+
         weights.removeAll {
-            it["date"].toString() == today
+            it["date"].toString() == weightDate
         }
 
         weights.add(
             mutableMapOf(
-                "date" to today,
+                "date" to weightDate,
                 "weight" to tempWeight
             )
         )
@@ -444,8 +474,8 @@ class MainActivity : Activity() {
     }
 
     private fun updateDayResult() {
-        val missions = todayMissions()
-        val doneMap = todayCompletions()
+        val missions = selectedMissions()
+        val doneMap = selectedCompletions()
 
         val missed = missions.filter {
             !(doneMap[it] as? Boolean ?: false)
@@ -458,7 +488,7 @@ class MainActivity : Activity() {
             ((complete.toDouble() / missions.size) * 100).roundToInt()
         }
 
-        dayResults[today] = mapOf(
+        dayResults[selectedDate] = mapOf(
             "status" to if (pct == 100) "green" else "partial",
             "missed" to missed,
             "complete" to complete,
@@ -467,25 +497,71 @@ class MainActivity : Activity() {
         )
     }
 
-    private fun todayMissions(): List<String> {
-        val raw = missionsByDate[today]
+    private fun selectedMissions(): List<String> {
+        val raw = missionsByDate[selectedDate]
 
-        val missions = when (raw) {
+        val savedMissions = when (raw) {
             is List<*> -> raw.mapNotNull {
                 it?.toString()
             }
             else -> emptyList()
         }
 
-        return if (missions.isEmpty()) {
-            defaultMissions
-        } else {
-            missions
+        val missions = linkedSetOf<String>()
+        missions.addAll(defaultMissions)
+        missions.addAll(permanentMissions)
+        missions.addAll(savedMissions)
+
+        missionRules.filter { missionRuleApplies(it, selectedDate) }.forEach { rule ->
+            val name = rule["name"]?.toString()?.trim().orEmpty()
+            if (name.isNotEmpty()) {
+                if (rule["action"]?.toString() == "remove") {
+                    missions.remove(name)
+                } else {
+                    missions.add(name)
+                }
+            }
         }
+
+        val excluded = when (val value = excludedMissionsByDate[selectedDate]) {
+            is List<*> -> value.mapNotNull { it?.toString() }
+            else -> emptyList()
+        }
+        missions.removeAll(excluded.toSet())
+
+        return missions.toList()
     }
 
-    private fun todayCompletions(): MutableMap<String, Any> {
-        val raw = completions[today]
+    private fun missionRuleApplies(rule: Map<String, Any>, dateKey: String): Boolean {
+        val startDate = rule["startDate"]?.toString().orEmpty()
+        val duration = rule["duration"]?.toString().orEmpty()
+        val endDate = rule["endDate"]?.toString().orEmpty()
+
+        if (startDate.isEmpty()) return false
+        if (duration == "one-day") return dateKey == startDate
+        if (dateKey < startDate) return false
+        if (duration == "temporary" && endDate.isNotEmpty() && dateKey > endDate) {
+            return false
+        }
+
+        val days = (rule["days"] as? List<*>)
+            ?.mapNotNull { (it as? Number)?.toInt() }
+            ?: emptyList()
+        if (days.isEmpty()) return true
+
+        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        val atlanta = TimeZone.getTimeZone("America/New_York")
+        formatter.timeZone = atlanta
+        val date = formatter.parse(dateKey) ?: return false
+        val calendar = java.util.Calendar.getInstance(atlanta)
+        calendar.time = date
+        val weekday = calendar.get(java.util.Calendar.DAY_OF_WEEK) - 1
+
+        return weekday in days
+    }
+
+    private fun selectedCompletions(): MutableMap<String, Any> {
+        val raw = completions[selectedDate]
 
         return when (raw) {
             is Map<*, *> -> raw.entries.associate {
@@ -496,8 +572,8 @@ class MainActivity : Activity() {
     }
 
     private fun missionStats(): MissionStats {
-        val missions = todayMissions()
-        val done = todayCompletions()
+        val missions = selectedMissions()
+        val done = selectedCompletions()
 
         val complete = missions.count {
             done[it] as? Boolean ?: false
@@ -512,34 +588,23 @@ class MainActivity : Activity() {
         return MissionStats(complete, missions.size, pct)
     }
 
-    private fun currentStreak(): Int {
-        var streak = 0
+    private fun changeMissionDay(days: Int) {
+        selectedDate = addDays(selectedDate, days)
+        ensureSelectedDateMissions()
+        hapticTiny()
+        renderAll()
+    }
 
-        for (i in 0 until 365) {
-            val key = addDays(today, -i)
+    private fun selectedDateLabel(): String {
+        if (selectedDate == todayKey()) return "Today"
 
-            val missions = when (val raw = missionsByDate[key]) {
-                is List<*> -> raw.mapNotNull {
-                    it?.toString()
-                }
-                else -> defaultMissions
-            }
+        val input = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        val output = SimpleDateFormat("MMM d", Locale.US)
+        val atlanta = TimeZone.getTimeZone("America/New_York")
+        input.timeZone = atlanta
+        output.timeZone = atlanta
 
-            val done = when (val raw = completions[key]) {
-                is Map<*, *> -> raw.entries.associate {
-                    it.key.toString() to (it.value as? Boolean ?: false)
-                }
-                else -> emptyMap()
-            }
-
-            if (missions.isNotEmpty() && missions.all { done[it] == true }) {
-                streak++
-            } else {
-                break
-            }
-        }
-
-        return streak
+        return input.parse(selectedDate)?.let(output::format) ?: selectedDate
     }
 
     private fun loadLatestWeight() {
@@ -682,16 +747,17 @@ class MainActivity : Activity() {
 
     private fun todayKey(): String {
         val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-        formatter.timeZone = TimeZone.getTimeZone("UTC")
+        formatter.timeZone = TimeZone.getTimeZone("America/New_York")
         return formatter.format(Date())
     }
 
     private fun addDays(dateKey: String, days: Int): String {
         val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-        formatter.timeZone = TimeZone.getTimeZone("UTC")
+        val atlanta = TimeZone.getTimeZone("America/New_York")
+        formatter.timeZone = atlanta
 
         val date = formatter.parse(dateKey) ?: Date()
-        val cal = java.util.Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+        val cal = java.util.Calendar.getInstance(atlanta)
         cal.time = date
         cal.add(java.util.Calendar.DATE, days)
 
@@ -757,7 +823,16 @@ class ProgressRingView(context: android.content.Context) : View(context) {
         canvas.drawText(
             "$progress%",
             width / 2f,
-            height / 2f + paint.textSize / 3f,
+            height / 2f + paint.textSize / 5f,
+            paint
+        )
+
+        paint.textSize = width * 0.09f
+        paint.color = Color.parseColor("#94a3b8")
+        canvas.drawText(
+            "MISSIONS",
+            width / 2f,
+            height / 2f + width * 0.22f,
             paint
         )
     }
