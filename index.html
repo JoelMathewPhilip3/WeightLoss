@@ -90,6 +90,9 @@ input,select{
 .stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}.stat{background:#020617;border-radius:14px;padding:12px;flex:1;min-width:170px;border:1px solid #263244}
 table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:11px;border-bottom:1px solid #334155;text-align:left;vertical-align:middle}.actions{display:flex;gap:8px;flex-wrap:wrap}
 .progress-note{font-size:16px;line-height:1.5;margin-top:8px}.progress-note b{color:var(--gold)}
+.goal-pill-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.goal-pill{border:1px solid #334155;border-radius:999px;padding:8px 12px;background:#020617;color:var(--text);font-weight:900;cursor:pointer}.goal-pill.active{background:var(--gold);color:#111827;border-color:var(--gold)}
+.mission-settings-note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:8px}
+
 @media(max-width:850px){.dashboard-grid,.ring-grid{grid-template-columns:1fr 1fr}.row.three{grid-template-columns:1fr}.mission-card{grid-template-columns:1fr}.mission-actions{justify-content:flex-start}}
 @media(max-width:650px){.dashboard-grid,.ring-grid,.form-grid{grid-template-columns:1fr}.form-field.full{grid-column:auto}.row{grid-template-columns:1fr}.day{min-height:58px;font-size:13px}th,td{font-size:13px;padding:8px}h1{font-size:28px}.dash-value{font-size:21px}.tabs button{flex:1}}
 </style>
@@ -192,6 +195,7 @@ table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:11px;bor
     <div class="card">
       <div class="section-title"><h2>Weight Loss Mission Graph</h2><div class="badge" id="graphStatusBadge"></div></div>
       <p class="small" id="graphStatusText"></p>
+      <div class="goal-pill-row" id="missionPageButtons"></div>
       <div class="chart-scroll" id="chartWrap"><canvas id="weightChart" width="1100" height="520"></canvas><div class="chart-tooltip" id="chartTooltip"></div></div>
       <div class="stats">
         <div class="stat">Current Weight: <b id="currentWeightText"></b> kg</div>
@@ -210,6 +214,26 @@ table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:11px;bor
     <div class="card">
       <div class="section-title"><h2>Weight History</h2><div class="badge" id="weightHistoryCount"></div></div>
       <table><thead><tr><th>Date</th><th>Weight</th><th>Action</th></tr></thead><tbody id="weightHistoryTable"></tbody></table>
+    </div>
+    <div class="card">
+      <div class="section-title"><h2>Mission / Occasion Settings</h2><div class="badge" id="missionSettingsBadge"></div></div>
+      <p class="small">Edit the current occasion and deadline. When one mission is done, start a new mission with its own weight tracker page.</p>
+      <h3>Current Mission</h3>
+      <div class="form-grid">
+        <div class="form-field"><label for="currentMissionName">Occasion name</label><input id="currentMissionName" placeholder="Example: Proposal" /></div>
+        <div class="form-field"><label for="currentMissionDeadline">Final date</label><input type="date" id="currentMissionDeadline" onclick="openDatePicker(this)" /></div>
+        <div class="form-field"><label for="currentMissionTarget">Target weight</label><input type="number" step="0.1" id="currentMissionTarget" /></div>
+        <div class="form-field"><label for="currentMissionStartDate">Tracker start date</label><input type="date" id="currentMissionStartDate" onclick="openDatePicker(this)" /></div>
+        <div class="form-field full"><button class="gold" onclick="saveCurrentMissionSettings()">Save Current Mission</button></div>
+      </div>
+      <h3 style="margin-top:24px">Start New Mission</h3>
+      <div class="form-grid">
+        <div class="form-field"><label for="newMissionGoalName">New event name</label><input id="newMissionGoalName" placeholder="Example: Wedding, Honeymoon, Beach Trip" /></div>
+        <div class="form-field"><label for="newMissionGoalDate">Final date</label><input type="date" id="newMissionGoalDate" onclick="openDatePicker(this)" /></div>
+        <div class="form-field"><label for="newMissionGoalTarget">Target weight</label><input type="number" step="0.1" id="newMissionGoalTarget" placeholder="Example: 91" /></div>
+        <div class="form-field full"><button class="green" onclick="startNewWeightMission()">Start New Mission</button></div>
+      </div>
+      <div class="mission-settings-note" id="missionSettingsNote"></div>
     </div>
   </section>
 </div>
@@ -240,18 +264,47 @@ let completions = JSON.parse(localStorage.getItem("completions")) || {};
 let dayResults = JSON.parse(localStorage.getItem("dayResults")) || {};
 let weights = JSON.parse(localStorage.getItem("weights")) || [{date:"2026-04-25",weight:100.8},{date:"2026-06-13",weight:98.7}];
 let targetWeight = Number(localStorage.getItem("targetWeight")) || 91;
+let missionGoals = JSON.parse(localStorage.getItem("missionGoals")) || [];
+let activeMissionId = localStorage.getItem("activeMissionId") || null;
 let db = null, syncEnabled = false, applyingCloudUpdate = false, syncTimer = null;
 let chartPoints = [];
 
+function dateAtEndOfDay(dateKey){ return new Date(dateKey + "T23:59:59"); }
+function formatMissionDeadline(dateKey){ const d=new Date(dateKey+"T12:00:00"); return d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}); }
+function missionStartDate(goal){ return new Date((goal.startDate || "2026-04-25") + "T00:00:00"); }
+function latestWeightBeforeOrOn(dateKey){ const sorted=[...weights].sort((a,b)=>a.date.localeCompare(b.date)); return [...sorted].reverse().find(w=>w.date<=dateKey) || sorted[0] || {date:dateKey,weight:100.8}; }
+function initMissionGoals(){
+  if(!Array.isArray(missionGoals)) missionGoals=[];
+  if(!missionGoals.length){
+    missionGoals=[{id:"proposal-2026",name:"Proposal",deadline:"2026-10-10",startDate:"2026-04-25",startWeight:100.8,targetWeight:targetWeight||91,createdAt:Date.now()}];
+  }
+  missionGoals=missionGoals.map((g,i)=>({
+    id:g.id||`goal-${Date.now()}-${i}`,
+    name:(g.name||g.title||"Mission").trim(),
+    deadline:g.deadline||g.date||"2026-10-10",
+    startDate:g.startDate||"2026-04-25",
+    startWeight:Number(g.startWeight||100.8),
+    targetWeight:Number(g.targetWeight||targetWeight||91),
+    createdAt:g.createdAt||Date.now()+i
+  })).sort((a,b)=>a.startDate.localeCompare(b.startDate));
+  if(!activeMissionId || !missionGoals.some(g=>g.id===activeMissionId)) activeMissionId=missionGoals[missionGoals.length-1].id;
+  localStorage.setItem("activeMissionId",activeMissionId);
+}
+function activeMission(){ initMissionGoals(); return missionGoals.find(g=>g.id===activeMissionId) || missionGoals[missionGoals.length-1]; }
+function currentTargetWeight(){ return Number(activeMission().targetWeight || targetWeight || 91); }
 function activeGoal(){
-  const now = new Date();
-  const isWeddingMode = now >= proposalDate;
+  const g = activeMission();
   return {
-    name: isWeddingMode ? "wedding" : "proposal",
-    title: isWeddingMode ? "Wedding" : "Proposal",
-    date: isWeddingMode ? weddingDate : proposalDate,
-    deadlineText: isWeddingMode ? "Jan 3, 2027, 12 PM IST" : "Oct 10, 7 PM",
-    ringStart: isWeddingMode ? proposalDate : goalStartDate
+    id:g.id,
+    name:g.name.toLowerCase(),
+    title:g.name,
+    date:dateAtEndOfDay(g.deadline),
+    deadline:g.deadline,
+    deadlineText:formatMissionDeadline(g.deadline),
+    ringStart:missionStartDate(g),
+    startDate:g.startDate,
+    startWeight:Number(g.startWeight||100.8),
+    targetWeight:Number(g.targetWeight||targetWeight||91)
   };
 }
 function activeGoalDate(){ return activeGoal().date; }
@@ -275,10 +328,10 @@ function openDatePicker(input){ try{ if(input.showPicker) input.showPicker(); }c
 function escapeHTML(str){ return String(str).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;"); }
 function ensureWeightBaseline(){ if(!weights.some(w=>w.date==="2026-04-25")) weights.push({date:"2026-04-25",weight:100.8}); weights.sort((a,b)=>new Date(a.date)-new Date(b.date)); }
 function migrateLegacyTrips(){ missionRules.forEach(r=>{ if(r.reason==="trip"&&r.location&&r.tripStart&&r.tripEnd&&!trips.some(t=>t.location===r.location&&t.startDate===r.tripStart&&t.endDate===r.tripEnd)) trips.push({id:`trip-${r.id||Date.now()}`,location:r.location,startDate:r.tripStart,endDate:r.tripEnd}); }); }
-function localSave(){ localStorage.setItem("missionsByDate",JSON.stringify(missionsByDate)); localStorage.setItem("permanentMissions",JSON.stringify(permanentMissions)); localStorage.setItem("missionRules",JSON.stringify(missionRules)); localStorage.setItem("excludedMissionsByDate",JSON.stringify(excludedMissionsByDate)); localStorage.setItem("trips",JSON.stringify(trips)); localStorage.setItem("completions",JSON.stringify(completions)); localStorage.setItem("dayResults",JSON.stringify(dayResults)); localStorage.setItem("weights",JSON.stringify(weights)); localStorage.setItem("targetWeight",targetWeight); }
+function localSave(){ localStorage.setItem("missionsByDate",JSON.stringify(missionsByDate)); localStorage.setItem("permanentMissions",JSON.stringify(permanentMissions)); localStorage.setItem("missionRules",JSON.stringify(missionRules)); localStorage.setItem("excludedMissionsByDate",JSON.stringify(excludedMissionsByDate)); localStorage.setItem("trips",JSON.stringify(trips)); localStorage.setItem("completions",JSON.stringify(completions)); localStorage.setItem("dayResults",JSON.stringify(dayResults)); localStorage.setItem("weights",JSON.stringify(weights)); localStorage.setItem("targetWeight",targetWeight); localStorage.setItem("missionGoals",JSON.stringify(missionGoals)); localStorage.setItem("activeMissionId",activeMissionId); }
 function save(){ localSave(); syncToCloud(); }
-function appState(){ return {missionsByDate, permanentMissions, missionRules, excludedMissionsByDate, trips, completions, dayResults, weights, targetWeight, updatedAt: Date.now()}; }
-function applyState(data){ if(!data) return; missionsByDate=data.missionsByDate||missionsByDate; permanentMissions=data.permanentMissions||permanentMissions; missionRules=data.missionRules||missionRules; excludedMissionsByDate=data.excludedMissionsByDate||excludedMissionsByDate; trips=data.trips||trips; completions=data.completions||completions; dayResults=data.dayResults||dayResults; weights=data.weights||weights; targetWeight=data.targetWeight||targetWeight; migrateLegacyTrips(); ensureWeightBaseline(); localSave(); renderAll(); }
+function appState(){ return {missionsByDate, permanentMissions, missionRules, excludedMissionsByDate, trips, completions, dayResults, weights, targetWeight, missionGoals, activeMissionId, updatedAt: Date.now()}; }
+function applyState(data){ if(!data) return; missionsByDate=data.missionsByDate||missionsByDate; permanentMissions=data.permanentMissions||permanentMissions; missionRules=data.missionRules||missionRules; excludedMissionsByDate=data.excludedMissionsByDate||excludedMissionsByDate; trips=data.trips||trips; completions=data.completions||completions; dayResults=data.dayResults||dayResults; weights=data.weights||weights; targetWeight=data.targetWeight||targetWeight; missionGoals=data.missionGoals||missionGoals; activeMissionId=data.activeMissionId||activeMissionId; migrateLegacyTrips(); ensureWeightBaseline(); initMissionGoals(); localSave(); renderAll(); }
 function initSync(){
   try{
     firebase.initializeApp(firebaseConfig); db=firebase.firestore(); syncEnabled=true; const ref=db.collection("daThadiyaUsers").doc("joel");
@@ -375,42 +428,46 @@ function renderTrips(){
   tbody.innerHTML=[...trips].sort((a,b)=>a.startDate.localeCompare(b.startDate)).map(t=>`<tr><td>${escapeHTML(t.location)}</td><td>${t.startDate} to ${t.endDate}</td><td><button class="red" onclick="removeTrip('${t.id}')">Remove</button></td></tr>`).join("");
 }
 function latestWeight(){ weights.sort((a,b)=>new Date(a.date)-new Date(b.date)); return weights[weights.length-1] || {date:todayKey(),weight:0}; }
+function weightsForMission(g){ return [...weights].filter(w=>w.date>=g.startDate && w.date<=g.deadline).sort((a,b)=>a.date.localeCompare(b.date)); }
+function latestWeightForMission(g){ const list=weightsForMission(g); return list[list.length-1] || latestWeightBeforeOrOn(g.startDate) || {date:g.startDate,weight:g.startWeight}; }
 function weightOnDate(dateKey){ const exact=weights.find(w=>w.date===dateKey); return exact?exact.weight:latestWeight().weight; }
 function validateWeight(weight){ if(!weight || weight<85 || weight>105){ alert("Weight should be between 85 kg and 105 kg for this graph."); return false; } return true; }
 function addWeight(){ const date=document.getElementById("weightDate").value; const weight=Number(document.getElementById("weightValue").value); if(!date||!validateWeight(weight)) return; weights=weights.filter(w=>w.date!==date); weights.push({date,weight}); weights.sort((a,b)=>new Date(a.date)-new Date(b.date)); save(); renderAll(); }
 function saveTodayWeight(){ const date=document.getElementById("todayWeightDate").value; const weight=Number(document.getElementById("todayWeightValue").value); if(!date||!validateWeight(weight)) return; weights=weights.filter(w=>w.date!==date); weights.push({date,weight}); weights.sort((a,b)=>new Date(a.date)-new Date(b.date)); save(); renderAll(); }
 function adjustWeightInput(delta){ const input=document.getElementById("weightValue"); const base=Number(input.value)||latestWeight().weight; input.value=(base+delta).toFixed(1); }
 function adjustTodayWeight(delta){ const input=document.getElementById("todayWeightValue"); const base=Number(input.value)||latestWeight().weight; input.value=(base+delta).toFixed(1); }
-function saveTarget(){ const newTarget=Number(document.getElementById("targetWeightInput").value); if(!validateWeight(newTarget)) return; targetWeight=newTarget; save(); renderAll(); }
+function saveTarget(){ const newTarget=Number(document.getElementById("targetWeightInput").value); if(!validateWeight(newTarget)) return; const g=activeMission(); g.targetWeight=newTarget; targetWeight=newTarget; save(); renderAll(); }
 function editWeight(date){ const item=weights.find(w=>w.date===date); if(!item) return; const val=prompt("Enter new weight for " + date, item.weight); if(val===null) return; const weight=Number(val); if(!validateWeight(weight)) return; item.weight=weight; save(); renderAll(); }
 function deleteWeight(date){ if(!confirm("Delete this weight entry?")) return; if(weights.length<=1) return alert("Keep at least one weight entry."); weights=weights.filter(w=>w.date!==date); save(); renderAll(); }
 function renderWeightHistory(){ const tbody=document.getElementById("weightHistoryTable"); tbody.innerHTML=""; document.getElementById("weightHistoryCount").textContent=`${weights.length} entries`; [...weights].sort((a,b)=>new Date(b.date)-new Date(a.date)).forEach(w=>{ const tr=document.createElement("tr"); tr.innerHTML=`<td>${w.date}</td><td>${w.weight} kg</td><td class="actions"><button onclick="editWeight('${w.date}')">Edit</button><button onclick="deleteWeight('${w.date}')">Delete</button></td>`; tbody.appendChild(tr); }); }
 function expectedWeightOn(date){
-  const end = activeGoalDate();
-  const total = end - goalStartDate;
-  const elapsed = Math.max(0, Math.min(date - goalStartDate, total));
-  return goalStartWeight + ((targetWeight - goalStartWeight) * (elapsed / total));
+  const g = activeGoal();
+  const start = missionStartDate(g);
+  const end = g.date;
+  const total = Math.max(1, end - start);
+  const elapsed = Math.max(0, Math.min(date - start, total));
+  return g.startWeight + ((g.targetWeight - g.startWeight) * (elapsed / total));
 }
-function getTrackStatus(){ const latest=latestWeight(); const expected=expectedWeightOn(new Date(latest.date+"T12:00:00")); const diff=latest.weight-expected; if(diff<=0.2) return {label:"On Track", cls:"green", diff, expected}; if(diff<=1) return {label:"Slightly Behind", cls:"", diff, expected}; return {label:"Behind", cls:"red", diff, expected}; }
+function getTrackStatus(){ const g=activeGoal(); const latest=latestWeightForMission(g); const expected=expectedWeightOn(new Date(latest.date+"T12:00:00")); const diff=latest.weight-expected; if(diff<=0.2) return {label:"On Track", cls:"green", diff, expected}; if(diff<=1) return {label:"Slightly Behind", cls:"", diff, expected}; return {label:"Behind", cls:"red", diff, expected}; }
 function weeklyStats(){ let complete=0,total=0,perfect=0,best={day:"-",pct:-1}; for(let i=6;i>=0;i--){ const key=addDays(todayKey(),-i); const s=missionStats(key); complete+=s.complete; total+=s.total; if(s.total && s.complete===s.total) perfect++; const label=new Date(key+"T12:00:00").toLocaleString("default",{weekday:"short"}); if(s.pct>best.pct) best={day:label,pct:s.pct}; } const last=latestWeight(); const weekAgoKey=addDays(todayKey(),-7); const before=[...weights].filter(w=>new Date(w.date)<=new Date(weekAgoKey)).pop() || weights[0]; const change=before ? (last.weight-before.weight) : 0; return {complete,total,perfect,best,change}; }
 function currentStreak(){ let streak=0; for(let i=0;i<365;i++){ const key=addDays(todayKey(),-i); const s=missionStats(key); if(s.total && s.complete===s.total) streak++; else break; } return streak; }
 function setRing(id,textId,pct,color){ const deg=Math.max(0,Math.min(100,pct))*3.6; document.getElementById(id).style.background=`conic-gradient(${color} ${deg}deg, #1e293b ${deg}deg)`; document.getElementById(textId).textContent=Math.round(Math.max(0,Math.min(100,pct)))+"%"; }
 function renderDashboard(){
   const g = activeGoal();
   const today = todayKey();
-  const latest = latestWeight();
+  const latest = latestWeightForMission(g);
   const ms = missionStats(today);
   const t = countdownParts(g.date);
-  const lost = Math.max(0, goalStartWeight - latest.weight);
-  const totalToLose = goalStartWeight - targetWeight;
+  const lost = Math.max(0, g.startWeight - latest.weight);
+  const totalToLose = g.startWeight - g.targetWeight;
   const weightPct = totalToLose ? lost / totalToLose * 100 : 0;
   const ringStart = g.ringStart;
-  const timeElapsed = Math.max(0, Math.min(100, (new Date() - ringStart) / (g.date - ringStart) * 100));
+  const timeElapsed = Math.max(0, Math.min(100, (new Date() - ringStart) / Math.max(1,(g.date - ringStart)) * 100));
 
   document.getElementById("todayDateBadge").textContent = today;
   document.getElementById("dashCurrentWeight").textContent = latest.weight;
-  document.getElementById("dashTargetWeight").textContent = targetWeight;
-  document.getElementById("dashWeightLeft").textContent = Math.max(0, latest.weight - targetWeight).toFixed(1);
+  document.getElementById("dashTargetWeight").textContent = g.targetWeight;
+  document.getElementById("dashWeightLeft").textContent = Math.max(0, latest.weight - g.targetWeight).toFixed(1);
   document.getElementById("dashCountdownTitle").textContent = `${g.title} Countdown`;
   document.getElementById("dashCountdown").textContent = `${t.days}d ${t.hours}h`;
   document.getElementById("dashDeadlineSub").textContent = deadlineLabel();
@@ -424,7 +481,7 @@ function renderDashboard(){
   setRing("weightRing","weightRingText",weightPct,"var(--blue)");
   setRing("missionRing","missionRingText",ms.pct,"var(--green)");
   setRing("countdownRing","countdownRingText",100-timeElapsed,"var(--gold)");
-  document.getElementById("weightRingSub").textContent = `${lost.toFixed(1)} kg lost from 100.8 kg`;
+  document.getElementById("weightRingSub").textContent = `${lost.toFixed(1)} kg lost from ${g.startWeight} kg`;
   document.getElementById("missionRingSub").textContent = `${ms.complete} of ${ms.total} missions`;
 
   const status = getTrackStatus();
@@ -437,34 +494,36 @@ function renderDashboard(){
   renderWeeklyReport();
 }
 function smartMotivation(ms,status){ if(ms.total && ms.complete===ms.total) return "Perfect day. <b>Lock it in.</b> Keep stacking clean days."; if(status.cls==="red") return `No panic. You are about <b>${status.diff.toFixed(1)} kg</b> above today’s target path. Win today’s missions and reset.`; if(latestWeight().weight<=status.expected) return "You are moving in the right direction. <b>Stay consistent today.</b>"; return "You are close. Finish today’s missions and keep the graph moving down."; }
-function renderWeeklyReport(){ const w=weeklyStats(); document.getElementById("weeklyBadge").textContent="Last 7 days"; document.getElementById("weeklyWeightChange").textContent=(w.change>=0?"+":"")+w.change.toFixed(1)+" kg"; document.getElementById("weeklyMissionCount").textContent=`${w.complete}/${w.total}`; document.getElementById("weeklyPerfectDays").textContent=w.perfect; document.getElementById("weeklyBestDay").textContent=w.best.day; const badges=[]; const streak=currentStreak(); if(streak>=3) badges.push(`${streak}-day streak`); if(streak>=7) badges.push("7-day beast mode"); if(goalStartWeight-latestWeight().weight>=5) badges.push("First 5 kg lost"); if(w.perfect>=3) badges.push("3 perfect days this week"); if(weights.length>=5) badges.push("5 weight check-ins"); if(badges.length===0) badges.push("Earn badges by completing missions and saving weight"); document.getElementById("achievementBadges").innerHTML=badges.map(b=>`<div class="badge green">${escapeHTML(b)}</div>`).join(""); }
+function renderWeeklyReport(){ const w=weeklyStats(); document.getElementById("weeklyBadge").textContent="Last 7 days"; document.getElementById("weeklyWeightChange").textContent=(w.change>=0?"+":"")+w.change.toFixed(1)+" kg"; document.getElementById("weeklyMissionCount").textContent=`${w.complete}/${w.total}`; document.getElementById("weeklyPerfectDays").textContent=w.perfect; document.getElementById("weeklyBestDay").textContent=w.best.day; const badges=[]; const streak=currentStreak(); if(streak>=3) badges.push(`${streak}-day streak`); if(streak>=7) badges.push("7-day beast mode"); if(activeGoal().startWeight-latestWeightForMission(activeGoal()).weight>=5) badges.push("First 5 kg lost"); if(w.perfect>=3) badges.push("3 perfect days this week"); if(weights.length>=5) badges.push("5 weight check-ins"); if(badges.length===0) badges.push("Earn badges by completing missions and saving weight"); document.getElementById("achievementBadges").innerHTML=badges.map(b=>`<div class="badge green">${escapeHTML(b)}</div>`).join(""); }
 function renderWeightStats(){
   const g = activeGoal();
-  const latest = latestWeight();
+  const latest = latestWeightForMission(g);
   const status = getTrackStatus();
   document.getElementById("currentWeightText").textContent = latest.weight;
-  document.getElementById("targetWeightText").textContent = targetWeight;
-  document.getElementById("targetWeightInput").value = targetWeight;
+  document.getElementById("targetWeightText").textContent = g.targetWeight;
+  document.getElementById("targetWeightInput").value = g.targetWeight;
   document.getElementById("weightDate").value = todayKey();
   document.getElementById("weightValue").value = weightOnDate(todayKey());
-  const totalWeeks = (g.date - goalStartDate) / 604800000;
-  const targetPace = (targetWeight - goalStartWeight) / totalWeeks;
-  const first = weights[0];
+  const totalWeeks = Math.max(1, (g.date - missionStartDate(g)) / 604800000);
+  const targetPace = (g.targetWeight - g.startWeight) / totalWeeks;
+  const missionWeights = weightsForMission(g);
+  const first = missionWeights[0] || {date:g.startDate, weight:g.startWeight};
   const actualWeeks = Math.max(1, (new Date(latest.date) - new Date(first.date)) / 604800000);
   const actualPace = (latest.weight - first.weight) / actualWeeks;
   document.getElementById("targetPaceText").textContent = targetPace.toFixed(2);
   document.getElementById("actualPaceText").textContent = actualPace.toFixed(2);
   document.getElementById("graphStatusBadge").textContent = status.label;
   document.getElementById("graphStatusBadge").className = "badge " + status.cls;
-  document.getElementById("graphStatusText").textContent = `Expected weight by latest entry for ${g.name} path: ${status.expected.toFixed(1)} kg. Difference: ${status.diff>=0?'+':''}${status.diff.toFixed(1)} kg.`;
+  document.getElementById("graphStatusText").textContent = `${g.title} tracker: ${g.startDate} to ${g.deadline}. Expected weight by latest entry: ${status.expected.toFixed(1)} kg. Difference: ${status.diff>=0?'+':''}${status.diff.toFixed(1)} kg.`;
+  renderMissionPageButtons();
+  renderMissionSettings();
 }
 function drawChart(){
   const g = activeGoal();
   const canvas = document.getElementById("weightChart");
   weights.sort((a,b)=>new Date(a.date)-new Date(b.date));
-  const earliestWeightDate = new Date(weights[0].date+"T00:00:00");
-  const earliestMonthStart = new Date(earliestWeightDate.getFullYear(), earliestWeightDate.getMonth(), 1);
-  const start = earliestMonthStart < goalStartDate ? earliestMonthStart : goalStartDate;
+  const missionWeights = weightsForMission(g);
+  const start = missionStartDate(g);
   const end = g.date;
   const months = monthsBetween(start,end)+1;
   canvas.width = Math.max(1100, months*180);
@@ -479,23 +538,23 @@ function drawChart(){
   ctx.fillRect(0,0,canvas.width,canvas.height);
   drawGraphPaper(ctx,padL,padT,chartW,chartH,minW,maxW,start,end,x,y);
   drawAxes(ctx,padL,padT,chartW,chartH,minW,maxW,start,end,x,y,g);
-  drawMonthlyGoalMarkers(ctx,padT,chartH,end,x,y);
+  drawMonthlyGoalMarkers(ctx,padT,chartH,end,x,y,g);
 
   ctx.strokeStyle="#ef4444";
   ctx.lineWidth=3;
   ctx.setLineDash([]);
   ctx.beginPath();
-  ctx.moveTo(padL,y(targetWeight));
-  ctx.lineTo(padL+chartW,y(targetWeight));
+  ctx.moveTo(padL,y(g.targetWeight));
+  ctx.lineTo(padL+chartW,y(g.targetWeight));
   ctx.stroke();
   ctx.fillStyle="#ef4444";
   ctx.font="15px Arial";
-  ctx.fillText(`Target: ${targetWeight} kg`,padL+10,y(targetWeight)-10);
+  ctx.fillText(`Target: ${g.targetWeight} kg`,padL+10,y(g.targetWeight)-10);
 
   ctx.strokeStyle="#38bdf8";
   ctx.lineWidth=4;
   ctx.setLineDash([]);
-  const points = weights.map(pt=>({x:x(pt.date),y:y(pt.weight),date:pt.date,weight:pt.weight}));
+  const points = missionWeights.map(pt=>({x:x(pt.date),y:y(pt.weight),date:pt.date,weight:pt.weight}));
   chartPoints = points;
   drawSmoothLine(ctx,points);
   points.forEach(pt=>{
@@ -515,27 +574,27 @@ function drawChart(){
   ctx.setLineDash([8,8]);
   ctx.lineWidth=3;
   ctx.beginPath();
-  ctx.moveTo(x(goalStartDate),y(goalStartWeight));
-  ctx.lineTo(x(end),y(targetWeight));
+  ctx.moveTo(x(g.startDate),y(g.startWeight));
+  ctx.lineTo(x(g.deadline),y(g.targetWeight));
   ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle="#22c55e";
   ctx.beginPath();
-  ctx.arc(x(goalStartDate),y(goalStartWeight),5,0,Math.PI*2);
+  ctx.arc(x(g.startDate),y(g.startWeight),5,0,Math.PI*2);
   ctx.fill();
   ctx.font="12px Arial";
-  ctx.fillText("100.8 kg",x(goalStartDate)+8,y(goalStartWeight)-8);
+  ctx.fillText(`${g.startWeight} kg`,x(g.startDate)+8,y(g.startWeight)-8);
 
   ctx.fillStyle="#f8fafc";
   ctx.font="bold 17px Arial";
-  ctx.fillText(`Actual Weight vs ${g.title} Goal Path`,padL,24);
+  ctx.fillText(`${g.title} Weight Tracker`,padL,24);
   bindChartTooltip(canvas);
   renderWeightStats();
 }
 function monthsBetween(startDate,endDate){ return (endDate.getFullYear()-startDate.getFullYear())*12+(endDate.getMonth()-startDate.getMonth()); }
 function drawSmoothLine(ctx,points){ if(!points.length) return; ctx.beginPath(); ctx.moveTo(points[0].x,points[0].y); for(let i=0;i<points.length-1;i++){ const p0=points[i-1]||points[i], p1=points[i], p2=points[i+1], p3=points[i+2]||p2; for(let t=0;t<=1;t+=0.08){ const tt=t*t, ttt=tt*t; const x=0.5*((2*p1.x)+(-p0.x+p2.x)*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*tt+(-p0.x+3*p1.x-3*p2.x+p3.x)*ttt); const y=0.5*((2*p1.y)+(-p0.y+p2.y)*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*tt+(-p0.y+3*p1.y-3*p2.y+p3.y)*ttt); ctx.lineTo(x,y); } } ctx.lineTo(points[points.length-1].x,points[points.length-1].y); ctx.stroke(); }
 function drawGraphPaper(ctx,padL,padT,chartW,chartH,minW,maxW,start,end,x,y){ ctx.lineWidth=1; for(let kg=minW;kg<=maxW;kg+=1){ ctx.strokeStyle=kg%5===0?"rgba(148,163,184,.26)":"rgba(148,163,184,.11)"; ctx.beginPath(); ctx.moveTo(padL,y(kg)); ctx.lineTo(padL+chartW,y(kg)); ctx.stroke(); } const d=new Date(start); d.setDate(1); while(d<=end){ ctx.strokeStyle="rgba(245,196,81,.62)"; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(x(d),padT); ctx.lineTo(x(d),padT+chartH); ctx.stroke(); d.setMonth(d.getMonth()+1); } }
-function drawMonthlyGoalMarkers(ctx,padT,chartH,end,x,y){ const d=new Date(goalStartDate); d.setDate(1); while(d<=end){ const expected=expectedWeightOn(d); ctx.fillStyle="rgba(34,197,94,.85)"; ctx.beginPath(); ctx.arc(x(d),y(expected),3,0,Math.PI*2); ctx.fill(); ctx.font="11px Arial"; ctx.fillText(expected.toFixed(1),x(d)+5,y(expected)-5); d.setMonth(d.getMonth()+1); } }
+function drawMonthlyGoalMarkers(ctx,padT,chartH,end,x,y,g){ const d=new Date(g.startDate+"T12:00:00"); d.setDate(1); while(d<=end){ const expected=expectedWeightOn(d); ctx.fillStyle="rgba(34,197,94,.85)"; ctx.beginPath(); ctx.arc(x(d),y(expected),3,0,Math.PI*2); ctx.fill(); ctx.font="11px Arial"; ctx.fillText(expected.toFixed(1),x(d)+5,y(expected)-5); d.setMonth(d.getMonth()+1); } }
 function drawAxes(ctx,padL,padT,chartW,chartH,minW,maxW,start,end,x,y,g){
   ctx.strokeStyle="#f8fafc";
   ctx.lineWidth=2;
@@ -567,14 +626,65 @@ function drawAxes(ctx,padL,padT,chartW,chartH,minW,maxW,start,end,x,y,g){
   }
 }
 function bindChartTooltip(canvas){ const tip=document.getElementById("chartTooltip"); canvas.onmousemove=e=>{ const rect=canvas.getBoundingClientRect(); const sx=canvas.width/rect.width, sy=canvas.height/rect.height; const mx=(e.clientX-rect.left)*sx, my=(e.clientY-rect.top)*sy; let near=null,dist=999; chartPoints.forEach(p=>{ const d=Math.hypot(p.x-mx,p.y-my); if(d<dist){dist=d; near=p;} }); if(near&&dist<18){ tip.style.display="block"; tip.style.left=(e.clientX-rect.left+16)+"px"; tip.style.top=(e.clientY-rect.top+16)+"px"; tip.innerHTML=`${near.date}<br><b>${near.weight} kg</b>`; } else tip.style.display="none"; }; canvas.onmouseleave=()=>tip.style.display="none"; }
-function renderAll(){ motivation(); renderDashboard(); renderCalendar(); renderSelectedMissions(); updateMissionEditor(); renderWeightHistory(); drawChart(); }
+function renderMissionPageButtons(){
+  const wrap=document.getElementById("missionPageButtons"); if(!wrap) return;
+  initMissionGoals();
+  wrap.innerHTML=missionGoals.map(g=>`<button class="goal-pill ${g.id===activeMissionId?'active':''}" onclick="switchWeightMission('${g.id}')">${escapeHTML(g.name)}</button>`).join("");
+}
+function switchWeightMission(id){ activeMissionId=id; const g=activeMission(); targetWeight=g.targetWeight; localSave(); renderAll(); }
+function renderMissionSettings(){
+  const g=activeGoal();
+  const name=document.getElementById("currentMissionName"); if(!name) return;
+  name.value=g.title;
+  document.getElementById("currentMissionDeadline").value=g.deadline;
+  document.getElementById("currentMissionTarget").value=g.targetWeight;
+  document.getElementById("currentMissionStartDate").value=g.startDate;
+  document.getElementById("missionSettingsBadge").textContent=g.title;
+  const isDone=new Date() > g.date;
+  document.getElementById("missionSettingsNote").innerHTML=isDone?`<b>${escapeHTML(g.title)}</b> has passed. Start a new mission below when ready.`:`Current mission ends on <b>${g.deadlineText}</b>.`;
+  const newTarget=document.getElementById("newMissionGoalTarget"); if(newTarget&&!newTarget.value) newTarget.value=g.targetWeight;
+}
+function saveCurrentMissionSettings(){
+  const g=activeMission();
+  const name=document.getElementById("currentMissionName").value.trim();
+  const deadline=document.getElementById("currentMissionDeadline").value;
+  const startDate=document.getElementById("currentMissionStartDate").value;
+  const newTarget=Number(document.getElementById("currentMissionTarget").value);
+  if(!name||!deadline||!startDate) return alert("Enter occasion name, tracker start date, and final date.");
+  if(deadline<startDate) return alert("Final date must be after the tracker start date.");
+  if(!validateWeight(newTarget)) return;
+  g.name=name; g.deadline=deadline; g.startDate=startDate; g.targetWeight=newTarget;
+  const startW=latestWeightBeforeOrOn(startDate); g.startWeight=Number(startW.weight||g.startWeight||100.8);
+  targetWeight=newTarget;
+  save(); renderAll();
+}
+function startNewWeightMission(){
+  const name=document.getElementById("newMissionGoalName").value.trim();
+  const deadline=document.getElementById("newMissionGoalDate").value;
+  const newTarget=Number(document.getElementById("newMissionGoalTarget").value || currentTargetWeight());
+  const startDate=todayKey();
+  if(!name||!deadline) return alert("Enter the new event name and final date.");
+  if(deadline<startDate) return alert("New mission final date must be today or later.");
+  if(!validateWeight(newTarget)) return;
+  const startWeight=Number(latestWeight().weight || 100.8);
+  const id=`goal-${Date.now().toString(36)}`;
+  missionGoals.push({id,name,deadline,startDate,startWeight,targetWeight:newTarget,createdAt:Date.now()});
+  activeMissionId=id;
+  targetWeight=newTarget;
+  if(!weights.some(w=>w.date===startDate)) weights.push({date:startDate,weight:startWeight});
+  weights.sort((a,b)=>a.date.localeCompare(b.date));
+  document.getElementById("newMissionGoalName").value="";
+  document.getElementById("newMissionGoalDate").value="";
+  save(); renderAll(); showTab('weight', document.querySelector('.tabBtn[onclick*="weight"]'));
+}
+function renderAll(){ initMissionGoals(); motivation(); renderDashboard(); renderCalendar(); renderSelectedMissions(); updateMissionEditor(); renderWeightHistory(); renderMissionPageButtons(); renderMissionSettings(); drawChart(); }
 document.getElementById("weightDate").value=todayKey(); document.getElementById("todayWeightDate").value=todayKey();
 document.getElementById("missionStartDate").value=todayKey();
 document.getElementById("missionEndDate").value=addDays(todayKey(),7);
 document.getElementById("plannerTripStart").value=todayKey();
 document.getElementById("plannerTripEnd").value=addDays(todayKey(),7);
 document.getElementById("weekdayPicker").innerHTML=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"].map((d,i)=>`<label><input type="checkbox" value="${i}">${d}</label>`).join("");
-migrateLegacyTrips(); ensureWeightBaseline(); autoCheckPastDays(); renderAll(); initSync(); setInterval(()=>{ motivation(); renderDashboard(); },60000);
+migrateLegacyTrips(); ensureWeightBaseline(); initMissionGoals(); autoCheckPastDays(); renderAll(); initSync(); setInterval(()=>{ motivation(); renderDashboard(); },60000);
 </script>
 </body>
 </html>
