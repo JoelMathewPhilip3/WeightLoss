@@ -273,6 +273,9 @@ class MainActivity : Activity() {
         circleRow.addView(weightCircle, weightParams)
 
         summaryCard.addView(circleRow, matchWrap())
+        val bellAccent = text("🔔", 15f, GOLD, true)
+        bellAccent.gravity = Gravity.CENTER
+        summaryCard.addView(bellAccent, matchWrap(top = 1))
 
         val navigation = LinearLayout(this)
         navigation.orientation = LinearLayout.HORIZONTAL
@@ -304,11 +307,11 @@ class MainActivity : Activity() {
         val characterFace = ImageView(this)
         characterFace.setImageResource(characterResource)
         characterFace.scaleType = ImageView.ScaleType.CENTER_CROP
-        characterFace.background = roundedCard("#173d5b", CYAN, 60f)
+        characterFace.background = roundedCard("#173d5b", CYAN, 95f)
         characterFace.clipToOutline = true
-        val characterParams = LinearLayout.LayoutParams(dp(66), dp(66))
+        val characterParams = LinearLayout.LayoutParams(dp(190), dp(190))
         characterParams.gravity = Gravity.CENTER_HORIZONTAL
-        characterParams.setMargins(0, dp(5), 0, dp(5))
+        characterParams.setMargins(0, dp(7), 0, dp(7))
         summaryCard.addView(characterFace, characterParams)
     }
 
@@ -390,8 +393,8 @@ class MainActivity : Activity() {
         card.gravity = Gravity.CENTER
         card.setPadding(dp(18), dp(16), dp(18), dp(16))
 
-        val color = if (done) GREEN else GOLD
-        val fill = if (done) "#052e16" else "#101418"
+        val color = if (done) CYAN else GOLD
+        val fill = if (done) "#0d4266" else "#101c2d"
 
         card.background = roundedCard(fill, color, 95f)
 
@@ -400,7 +403,7 @@ class MainActivity : Activity() {
         title.maxLines = 4
         card.addView(title, matchWrap())
 
-        val tap = text(if (done) "Tap to undo" else "Tap to complete", 11f, MUTED, false)
+        val tap = text(if (done) "✓ Tap to undo" else "Tap to complete", 11f, MUTED, false)
         tap.gravity = Gravity.CENTER
         card.addView(tap, matchWrap(top = 12))
 

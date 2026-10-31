@@ -8,7 +8,7 @@
 <style>
 :root{
   --bg:#102238; --card:#162c45; --card2:#1c3855; --gold:#f6c847;
-  --green:#22c55e; --red:#ef4444; --text:#f8fafc; --muted:#94a3b8;
+  --green:#1599da; --red:#ef4444; --text:#f8fafc; --muted:#94a3b8;
   --blue:#1595d3; --purple:#a78bfa; --orange:#fb923c;
 }
 *{box-sizing:border-box}
@@ -104,6 +104,28 @@ table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:11px;bor
 .confetti-piece{position:fixed;top:-18px;width:8px;height:13px;pointer-events:none;z-index:1000;animation:lockin-fall 1500ms ease-in forwards}
 @keyframes lockin-fall{to{transform:translate3d(var(--drift),105vh,0) rotate(650deg);opacity:0}}
 @media(prefers-reduced-motion:reduce){.confetti-piece{animation:none;display:none}}
+
+/* Doraemon Edition 2.0 — presentation only: no storage or sync mutations */
+:root{--blue:#1599da;--gold:#f6c847;--pink:#f4a0c8;--teal:#42c6b8}
+body{background:radial-gradient(circle at 12% 5%,rgba(21,153,218,.32),transparent 40%),radial-gradient(circle at 94% 32%,rgba(244,160,200,.10),transparent 30%),#0d1e30}
+header{background:linear-gradient(110deg,rgba(21,153,218,.17),transparent 72%);border-bottom:2px solid rgba(246,200,71,.25)}
+h1{color:#f8fafc;text-shadow:2px 3px 0 #1599da}
+.card{border-color:rgba(21,153,218,.37);box-shadow:0 12px 30px #0005}
+.card:nth-child(3n){border-color:rgba(246,200,71,.35)}
+.dash-card:nth-child(4n+1){border-color:#1599da}.dash-card:nth-child(4n+2){border-color:#f6c847}.dash-card:nth-child(4n+3){border-color:#f4a0c8}.dash-card:nth-child(4n){border-color:#42c6b8}
+.gadget-icon{width:25px;height:25px;vertical-align:middle;object-fit:contain;margin-right:7px}
+.tabs button{display:inline-flex;align-items:center;justify-content:center}
+.section-title h2{display:flex;align-items:center;gap:4px}
+.mission-card{border-color:#e9bc46;background:linear-gradient(125deg,#183b57,#102238)}
+.mission-card.done{background:linear-gradient(125deg,#0b4f78,#10304e);border-color:#57c7fa;box-shadow:0 0 0 1px #1599da44}
+.mission-card.done .mission-check{background:#1599da;color:white;border-color:#e7f7ff}
+.ring-card{background:linear-gradient(155deg,#163f5e,#102238)}
+.character-card{border-color:#f6c847}
+.day{padding:5px 2px;min-height:85px}.day-num{font-size:12px}
+.day-face{width:38px;height:38px;max-width:90%;border-radius:50%;object-fit:cover;border:2px solid #1599da;display:block}
+.day-empty-icon{font-size:18px;color:#7495ad}
+.day-weight,.day-trip{font-size:9px}
+@media(max-width:600px){.calendar{gap:3px}.day{min-height:68px;border-radius:8px}.day-face{width:28px;height:28px}.day-num{font-size:11px}.tabs button{font-size:12px;padding:8px 7px}.tabs .gadget-icon{width:21px;height:21px;margin-right:3px}}
 </style>
 </head>
 <body>
@@ -113,9 +135,9 @@ table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:11px;bor
   <div class="sync-status" id="syncStatus">Sync: local only until Firebase is configured</div>
 </header>
 <div class="tabs">
-  <button class="tabBtn active" onclick="showTab('today', this)">Today</button>
-  <button class="tabBtn" onclick="showTab('missions', this)">Mission Calendar</button>
-  <button class="tabBtn" onclick="showTab('weight', this)">Weight Tracker</button>
+  <button class="tabBtn active" onclick="showTab('today', this)"><img class="gadget-icon" src="assets/gadgets/pocket.svg" alt="">Today</button>
+  <button class="tabBtn" onclick="showTab('missions', this)"><img class="gadget-icon" src="assets/gadgets/door.svg" alt="">Mission Calendar</button>
+  <button class="tabBtn" onclick="showTab('weight', this)"><img class="gadget-icon" src="assets/gadgets/machine.svg" alt="">Weight Tracker</button>
 </div>
 <div class="wrap">
   <section id="today" class="tab active">
@@ -129,7 +151,7 @@ table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:11px;bor
       </div>
       <div class="ring-grid">
         <div class="ring-card"><div class="ring" id="weightRing"><div class="ring-inner" id="weightRingText"></div></div><div class="ring-title">Weight Goal</div><div class="ring-sub" id="weightRingSub"></div></div>
-        <div class="ring-card"><div class="ring" id="missionRing"><div class="ring-inner" id="missionRingText"></div></div><div class="ring-title">Today’s Missions</div><div class="ring-sub" id="missionRingSub"></div></div>
+        <div class="ring-card"><div class="ring" id="missionRing"><div class="ring-inner" id="missionRingText"></div></div><div class="ring-title"><img class="gadget-icon" src="assets/gadgets/bell.svg" alt="">Today’s Missions</div><div class="ring-sub" id="missionRingSub"></div></div>
         <div class="ring-card"><div class="ring" id="countdownRing"><div class="ring-inner" id="countdownRingText"></div></div><div class="ring-title">Time Remaining</div><div class="ring-sub" id="countdownRingSub">Until proposal deadline</div></div>
       </div>
       <div class="character-card" aria-live="polite">
@@ -139,7 +161,7 @@ table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:11px;bor
       <p class="progress-note" id="smartMotivation"></p>
     </div>
     <div class="card">
-      <div class="section-title"><h2>Today’s Missions</h2><div class="badge" id="todayMissionBadge"></div></div>
+      <div class="section-title"><h2><img class="gadget-icon" src="assets/gadgets/pocket.svg" alt="">Today’s Missions</h2><div class="badge" id="todayMissionBadge"></div></div>
       <div class="mission-list" id="todayMissionList"></div>
     </div>
     <div class="card">
@@ -206,7 +228,7 @@ table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:11px;bor
 
   <section id="weight" class="tab">
     <div class="card">
-      <div class="section-title"><h2>Weight Loss Mission Graph</h2><div class="badge" id="graphStatusBadge"></div></div>
+      <div class="section-title"><h2><img class="gadget-icon" src="assets/gadgets/copter.svg" alt="">Weight Loss Mission Graph</h2><div class="badge" id="graphStatusBadge"></div></div>
       <p class="small" id="graphStatusText"></p>
       <div class="goal-pill-row" id="missionPageButtons"></div>
       <div class="chart-scroll" id="chartWrap"><canvas id="weightChart" width="1100" height="520"></canvas><div class="chart-tooltip" id="chartTooltip"></div></div>
@@ -225,7 +247,7 @@ table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:11px;bor
       <div class="row"><input type="number" step="0.1" id="targetWeightInput" /><button onclick="saveTarget()">Save Target</button></div>
     </div>
     <div class="card">
-      <div class="section-title"><h2>Weight History</h2><div class="badge" id="weightHistoryCount"></div></div>
+      <div class="section-title"><h2><img class="gadget-icon" src="assets/gadgets/machine.svg" alt="">Weight History</h2><div class="badge" id="weightHistoryCount"></div></div>
       <table><thead><tr><th>Date</th><th>Weight</th><th>Action</th></tr></thead><tbody id="weightHistoryTable"></tbody></table>
     </div>
     <div class="card">
@@ -381,10 +403,10 @@ function removeMissionForDate(dateKey,i){ if(!confirm("Remove this mission from 
 function renderMissionCards(containerId,dateKey,editable){ const wrap=document.getElementById(containerId); wrap.innerHTML=""; const missions=getMissionsForDate(dateKey); completions[dateKey]=completions[dateKey]||{}; missions.forEach((mission,i)=>{ const done=!!completions[dateKey][mission]; const div=document.createElement("div"); div.className="mission-card"+(done?" done":""); const nameHtml=editable?`<input value="${escapeHTML(mission)}" onchange="editMissionForDate('${dateKey}',${i},this.value)" />`:`<div class="mission-name">${escapeHTML(mission)}</div>`; div.innerHTML=`<div class="mission-main"><div class="mission-check">${done?"✓":""}</div><div>${nameHtml}<div class="mission-status">${done?"Completed":"Tap complete when finished"}</div></div></div><div class="mission-actions"><button class="${done?'red':'green'}" onclick="toggleMissionForDate('${dateKey}',${i})">${done?'Undo':'Complete'}</button>${editable?`<button onclick="removeMissionForDate('${dateKey}',${i})">Remove</button>`:""}</div>`; wrap.appendChild(div); }); }
 function calendarShade(pct,total){ if(!total) return {bg:"#0f172a", border:"#263244"}; const hue=Math.round((Math.max(0,Math.min(100,pct))/100)*120); const alpha=0.16+(Math.max(0,Math.min(100,pct))/100)*0.26; return {bg:`hsla(${hue}, 74%, 45%, ${alpha})`, border:`hsla(${hue}, 74%, 55%, .75)`}; }
 function tripsForDate(dateKey){ return trips.filter(t=>t.startDate<=dateKey && t.endDate>=dateKey); }
-function renderCalendar(){ const cal=document.getElementById("calendar"); cal.innerHTML=""; const y=currentMonth.getFullYear(), m=currentMonth.getMonth(); document.getElementById("monthTitle").textContent=currentMonth.toLocaleString("default",{month:"long",year:"numeric"}); ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(d=>{ const el=document.createElement("div"); el.className="dow"; el.textContent=d; cal.appendChild(el); }); const first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate(); for(let i=0;i<first;i++){ const e=document.createElement("div"); e.className="day empty"; cal.appendChild(e); } for(let d=1;d<=days;d++){ const key=getDateKey(y,m,d); const el=document.createElement("div"); el.className="day"; const stats=missionStats(key); const dayTrips=tripsForDate(key); const savedWeight=weights.find(w=>w.date===key); const shade=calendarShade(stats.pct,stats.total); el.style.background=shade.bg; el.style.borderColor=shade.border; if(key===todayKey()) el.classList.add("today"); if(key===selectedDate) el.classList.add("selected"); el.innerHTML=`<div class="day-num">${d}</div><div class="day-pct">${stats.pct}%</div>${savedWeight?`<div class="day-weight">${savedWeight.weight} kg</div>`:""}${dayTrips.map(t=>`<div class="day-trip">${escapeHTML(t.location)}</div>`).join("")}`; el.title=`${stats.complete}/${stats.total} missions complete${savedWeight?` | Weight: ${savedWeight.weight} kg`:""}${dayTrips.length?` | Traveling to ${dayTrips.map(t=>t.location).join(", ")}`:""}`; el.onclick=()=>selectDate(key); cal.appendChild(el); } }
+function renderCalendar(){ const cal=document.getElementById("calendar"); cal.innerHTML=""; const y=currentMonth.getFullYear(), m=currentMonth.getMonth(); document.getElementById("monthTitle").textContent=currentMonth.toLocaleString("default",{month:"long",year:"numeric"}); ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(d=>{ const el=document.createElement("div"); el.className="dow"; el.textContent=d; cal.appendChild(el); }); const first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate(); for(let i=0;i<first;i++){ const e=document.createElement("div"); e.className="day empty"; cal.appendChild(e); } for(let d=1;d<=days;d++){ const key=getDateKey(y,m,d); const el=document.createElement("div"); el.className="day"; const stats=missionStats(key); const dayTrips=tripsForDate(key); const savedWeight=weights.find(w=>w.date===key); const shade=calendarShade(stats.pct,stats.total); el.style.background=shade.bg; el.style.borderColor=shade.border; if(key===todayKey()) el.classList.add("today"); if(key===selectedDate) el.classList.add("selected"); el.innerHTML=`<div class="day-num">${d}</div>${key>todayKey()||stats.total===0?`<span class="day-empty-icon" aria-hidden="true">—</span>`:`<img class="day-face" src="assets/characters/${lockInCharacters[stats.pct===100?5:Math.floor(Math.max(0,stats.pct)/20)].file}" alt="${stats.pct}% complete" loading="lazy">`}${savedWeight?`<div class="day-weight">${savedWeight.weight} kg</div>`:""}${dayTrips.map(t=>`<div class="day-trip">${escapeHTML(t.location)}</div>`).join("")}`; el.title=`${stats.complete}/${stats.total} missions complete${savedWeight?` | Weight: ${savedWeight.weight} kg`:""}${dayTrips.length?` | Traveling to ${dayTrips.map(t=>t.location).join(", ")}`:""}`; el.onclick=()=>selectDate(key); cal.appendChild(el); } }
 function selectDate(key){ selectedDate=key; getMissionsForDate(selectedDate); renderCalendar(); renderSelectedMissions(); }
 function changeMonth(n){ currentMonth.setMonth(currentMonth.getMonth()+n); renderCalendar(); }
-function renderSelectedMissions(){ document.getElementById("selectedDateBadge").textContent=selectedDate; const dayTrips=tripsForDate(selectedDate); document.getElementById("selectedTravelNote").innerHTML=dayTrips.map(t=>`<div class="travel-note">Traveling to ${escapeHTML(t.location)}: ${t.startDate} to ${t.endDate} <button class="red" onclick="removeTrip('${t.id}')">Remove Trip</button></div>`).join(""); renderMissionCards("selectedMissionList",selectedDate,true); }
+function renderSelectedMissions(){ document.getElementById("selectedDateBadge").textContent=`${selectedDate} · ${missionStats(selectedDate).pct}% complete`; const dayTrips=tripsForDate(selectedDate); document.getElementById("selectedTravelNote").innerHTML=dayTrips.map(t=>`<div class="travel-note">Traveling to ${escapeHTML(t.location)}: ${t.startDate} to ${t.endDate} <button class="red" onclick="removeTrip('${t.id}')">Remove Trip</button></div>`).join(""); renderMissionCards("selectedMissionList",selectedDate,true); }
 function addMissionForSelectedDay(){ const input=document.getElementById("newMission"); const val=input.value.trim(); if(!val) return; missionsByDate[selectedDate]=[...new Set([...(missionsByDate[selectedDate]||[]),val])]; excludedMissionsByDate[selectedDate]=(excludedMissionsByDate[selectedDate]||[]).filter(m=>m!==val); input.value=""; evaluateDay(selectedDate); save(); renderAll(); }
 function allKnownMissionNames(){ const names=new Set([...defaultMissions,...permanentMissions]); Object.values(missionsByDate).forEach(list=>(list||[]).forEach(m=>names.add(m))); missionRules.filter(r=>r.action==="add").forEach(r=>names.add(r.name)); return [...names].sort(); }
 function updateMissionEditor(){
