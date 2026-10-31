@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Da Thadiya</title>
-<meta name="theme-color" content="#070b14">
+<title>Lock In</title>
+<meta name="theme-color" content="#102238">
 <style>
 :root{
-  --bg:#070b14; --card:#111827; --card2:#182235; --gold:#f5c451;
+  --bg:#102238; --card:#162c45; --card2:#1c3855; --gold:#f6c847;
   --green:#22c55e; --red:#ef4444; --text:#f8fafc; --muted:#94a3b8;
-  --blue:#38bdf8; --purple:#a78bfa; --orange:#fb923c;
+  --blue:#1595d3; --purple:#a78bfa; --orange:#fb923c;
 }
 *{box-sizing:border-box}
 body{
   margin:0; font-family:Inter,Arial,sans-serif; color:var(--text);
-  background:radial-gradient(circle at top,#1e293b,#020617 60%);
+  background:radial-gradient(circle at top,#1e4262,#091626 66%);
   min-height:100vh;
 }
 header{padding:26px 18px;text-align:center}
@@ -22,7 +22,7 @@ h1{margin:0;font-size:34px;color:var(--gold);letter-spacing:1px}
 .header-motivation{color:#f8fafc;margin-top:10px;font-size:17px}
 .header-motivation b{color:var(--gold)}
 .sync-status{font-size:12px;color:var(--muted);margin-top:8px}
-.tabs{display:flex;gap:10px;justify-content:center;margin:10px;flex-wrap:wrap;position:sticky;top:0;z-index:10;padding:10px;background:rgba(7,11,20,.82);backdrop-filter:blur(12px)}
+.tabs{display:flex;gap:10px;justify-content:center;margin:10px;flex-wrap:wrap;position:sticky;top:0;z-index:10;padding:10px;background:rgba(12,30,49,.92);backdrop-filter:blur(12px)}
 button{
   border:0;border-radius:12px;padding:10px 14px;font-weight:800;
   background:var(--card2);color:var(--text);cursor:pointer;
@@ -33,29 +33,29 @@ button.green{background:rgba(34,197,94,.2);border:1px solid rgba(34,197,94,.5);c
 button.red{background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.45);color:#fee2e2}
 .wrap{max-width:1120px;margin:auto;padding:14px}
 .card{
-  background:rgba(17,24,39,.92);border:1px solid rgba(245,196,81,.22);
+  background:rgba(22,44,69,.96);border:1px solid rgba(245,196,81,.22);
   border-radius:22px;padding:18px;margin-bottom:18px;box-shadow:0 12px 35px #0008;
 }
 .hero{
-  background:linear-gradient(135deg,rgba(245,196,81,.18),rgba(56,189,248,.10),rgba(17,24,39,.95));
-  border-color:rgba(245,196,81,.38);
+  background:linear-gradient(135deg,rgba(21,149,211,.23),rgba(246,200,71,.08),rgba(22,44,69,.96));
+  border-color:rgba(21,149,211,.48);
 }
 .tab{display:none}.tab.active{display:block}
 .dashboard-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:14px}
-.dash-card{background:#020617;border:1px solid #263244;border-radius:18px;padding:14px;min-height:108px}
+.dash-card{background:#102238;border:1px solid #35516e;border-radius:18px;padding:14px;min-height:108px}
 .dash-label{color:var(--muted);font-size:13px;margin-bottom:8px}
 .dash-value{font-size:24px;font-weight:900;color:#fff}
 .dash-sub{color:var(--muted);font-size:12px;margin-top:6px}
 .ring-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
-.ring-card{background:#020617;border:1px solid #263244;border-radius:18px;padding:16px;text-align:center}
+.ring-card{background:#102238;border:1px solid #35516e;border-radius:18px;padding:16px;text-align:center}
 .ring{
   width:118px;height:118px;border-radius:50%;margin:0 auto 10px;display:grid;place-items:center;
   background:conic-gradient(var(--gold) 0deg, #1e293b 0deg);
 }
-.ring-inner{width:86px;height:86px;border-radius:50%;background:#020617;display:grid;place-items:center;font-weight:900;font-size:18px}
+.ring-inner{width:86px;height:86px;border-radius:50%;background:#102238;display:grid;place-items:center;font-weight:900;font-size:18px}
 .ring-title{font-weight:800}.ring-sub{font-size:12px;color:var(--muted);margin-top:4px}
 .section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.badge{background:#020617;border:1px solid #334155;border-radius:999px;padding:8px 12px;color:var(--gold);font-weight:800;font-size:13px}
+.badge{background:#102238;border:1px solid #334155;border-radius:999px;padding:8px 12px;color:var(--gold);font-weight:800;font-size:13px}
 .badge.green{color:#86efac;border-color:rgba(34,197,94,.45)}
 .badge.red{color:#fca5a5;border-color:rgba(239,68,68,.45)}
 .badges{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
@@ -64,42 +64,51 @@ button.red{background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.45);c
 .row.three{grid-template-columns:1fr 1fr 150px}
 input,select{
   width:100%;padding:11px;border-radius:12px;border:1px solid #334155;
-  background:#020617;color:var(--text);font-size:14px;
+  background:#102238;color:var(--text);font-size:14px;
 }
 .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
 .form-field label{display:block;color:var(--muted);font-size:12px;font-weight:800;margin:0 0 6px}
 .form-field.full{grid-column:1/-1}.hidden{display:none!important}
-.weekday-picker{display:flex;gap:8px;flex-wrap:wrap}.weekday-picker label{display:flex;align-items:center;gap:6px;background:#020617;border:1px solid #334155;border-radius:10px;padding:9px 10px;color:var(--text);cursor:pointer}.weekday-picker input{width:auto;margin:0}
+.weekday-picker{display:flex;gap:8px;flex-wrap:wrap}.weekday-picker label{display:flex;align-items:center;gap:6px;background:#102238;border:1px solid #334155;border-radius:10px;padding:9px 10px;color:var(--text);cursor:pointer}.weekday-picker input{width:auto;margin:0}
 .day-trip{font-size:10px;line-height:1.15;color:#111827;background:var(--gold);border-radius:5px;padding:3px 4px;width:calc(100% - 6px);white-space:normal;overflow-wrap:anywhere;text-align:center;font-weight:900}
 .day-weight{font-size:10px;line-height:1.15;color:#e0f2fe;background:rgba(56,189,248,.22);border:1px solid rgba(56,189,248,.45);border-radius:5px;padding:2px 4px;font-weight:900}
 .travel-note{margin-top:12px;padding:12px;border-radius:12px;background:rgba(245,196,81,.12);border:1px solid rgba(245,196,81,.4);color:#fde68a;font-weight:800}
 .quick-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .mission-list{display:grid;gap:10px;margin-top:12px}
-.mission-card{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#020617;border:1px solid #263244;border-radius:16px;padding:14px}
+.mission-card{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#102238;border:1px solid #35516e;border-radius:16px;padding:14px}
 .mission-card.done{border-color:rgba(34,197,94,.55);background:rgba(34,197,94,.08)}
 .mission-main{display:flex;gap:10px;align-items:flex-start}
-.mission-check{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#111827;border:1px solid #334155;font-weight:900;flex:0 0 auto}
+.mission-check{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#162c45;border:1px solid #334155;font-weight:900;flex:0 0 auto}
 .mission-card.done .mission-check{background:var(--green);color:#052e16;border-color:var(--green)}
 .mission-name{font-weight:800}.mission-status{font-size:12px;color:var(--muted);margin-top:3px}
 .mission-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .cal-head{display:flex;justify-content:space-between;align-items:center}
 .calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:14px}
-.day,.dow{min-height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#0f172a;border:1px solid #263244}
+.day,.dow{min-height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#162c45;border:1px solid #35516e}
 .dow{min-height:30px;color:var(--gold);font-weight:900}.day{cursor:pointer;position:relative;flex-direction:column;gap:3px;overflow:hidden}.day.empty{background:transparent;border:0;cursor:default}.day-num{font-weight:900}.day-pct{font-size:11px;color:#e2e8f0;font-weight:800}.day.green{background:rgba(34,197,94,.35);border-color:var(--green)}.day.red{background:rgba(239,68,68,.35);border-color:var(--red)}.today{outline:2px solid var(--gold)}.selected{box-shadow:0 0 0 3px #fff inset}
-.chart-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:10px;position:relative}.chart-scroll canvas{height:420px;width:auto;min-width:1000px;background:#020617;border-radius:16px;border:1px solid #334155;display:block}.chart-tooltip{position:absolute;pointer-events:none;background:#020617;border:1px solid #475569;color:#fff;border-radius:10px;padding:8px 10px;font-size:12px;display:none;box-shadow:0 8px 20px #0008}
-.stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}.stat{background:#020617;border-radius:14px;padding:12px;flex:1;min-width:170px;border:1px solid #263244}
+.chart-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:10px;position:relative}.chart-scroll canvas{height:420px;width:auto;min-width:1000px;background:#102238;border-radius:16px;border:1px solid #334155;display:block}.chart-tooltip{position:absolute;pointer-events:none;background:#102238;border:1px solid #475569;color:#fff;border-radius:10px;padding:8px 10px;font-size:12px;display:none;box-shadow:0 8px 20px #0008}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}.stat{background:#102238;border-radius:14px;padding:12px;flex:1;min-width:170px;border:1px solid #35516e}
 table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:11px;border-bottom:1px solid #334155;text-align:left;vertical-align:middle}.actions{display:flex;gap:8px;flex-wrap:wrap}
 .progress-note{font-size:16px;line-height:1.5;margin-top:8px}.progress-note b{color:var(--gold)}
-.goal-pill-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.goal-pill{border:1px solid #334155;border-radius:999px;padding:8px 12px;background:#020617;color:var(--text);font-weight:900;cursor:pointer}.goal-pill.active{background:var(--gold);color:#111827;border-color:var(--gold)}
+.goal-pill-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.goal-pill{border:1px solid #334155;border-radius:999px;padding:8px 12px;background:#102238;color:var(--text);font-weight:900;cursor:pointer}.goal-pill.active{background:var(--gold);color:#111827;border-color:var(--gold)}
 .mission-settings-note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:8px}
 
 @media(max-width:850px){.dashboard-grid,.ring-grid{grid-template-columns:1fr 1fr}.row.three{grid-template-columns:1fr}.mission-card{grid-template-columns:1fr}.mission-actions{justify-content:flex-start}}
 @media(max-width:650px){.dashboard-grid,.ring-grid,.form-grid{grid-template-columns:1fr}.form-field.full{grid-column:auto}.row{grid-template-columns:1fr}.day{min-height:58px;font-size:13px}th,td{font-size:13px;padding:8px}h1{font-size:28px}.dash-value{font-size:21px}.tabs button{flex:1}}
+
+/* Lock In character achievement card and lightweight completion confetti */
+.character-card{display:flex;align-items:center;gap:18px;background:linear-gradient(135deg,#163852,#12273e);border:1px solid #2778a6;border-radius:18px;padding:14px 18px;margin-top:14px}
+.character-portrait{width:100px;height:100px;border-radius:50%;object-fit:cover;flex-shrink:0;border:3px solid #1595d3;background:#102238}
+.character-name{font-size:20px;font-weight:900;color:#f8fafc}.character-caption{font-size:13px;color:#b6cede;margin-top:5px}.character-percent{font-weight:900;color:#f6c847;margin-top:8px}
+@media(max-width:450px){.character-card{gap:12px;padding:12px}.character-portrait{width:78px;height:78px}.character-name{font-size:17px}}
+.confetti-piece{position:fixed;top:-18px;width:8px;height:13px;pointer-events:none;z-index:1000;animation:lockin-fall 1500ms ease-in forwards}
+@keyframes lockin-fall{to{transform:translate3d(var(--drift),105vh,0) rotate(650deg);opacity:0}}
+@media(prefers-reduced-motion:reduce){.confetti-piece{animation:none;display:none}}
 </style>
 </head>
 <body>
 <header>
-  <h1>DA THADIYA</h1>
+  <h1>LOCK IN</h1>
   <div class="header-motivation" id="headerMotivation"></div>
   <div class="sync-status" id="syncStatus">Sync: local only until Firebase is configured</div>
 </header>
@@ -122,6 +131,10 @@ table{width:100%;border-collapse:collapse;margin-top:12px}th,td{padding:11px;bor
         <div class="ring-card"><div class="ring" id="weightRing"><div class="ring-inner" id="weightRingText"></div></div><div class="ring-title">Weight Goal</div><div class="ring-sub" id="weightRingSub"></div></div>
         <div class="ring-card"><div class="ring" id="missionRing"><div class="ring-inner" id="missionRingText"></div></div><div class="ring-title">Today’s Missions</div><div class="ring-sub" id="missionRingSub"></div></div>
         <div class="ring-card"><div class="ring" id="countdownRing"><div class="ring-inner" id="countdownRingText"></div></div><div class="ring-title">Time Remaining</div><div class="ring-sub" id="countdownRingSub">Until proposal deadline</div></div>
+      </div>
+      <div class="character-card" aria-live="polite">
+        <img class="character-portrait" id="dailyCharacterImage" src="assets/characters/teacher.png" alt="Today's progress character" width="100" height="100" loading="lazy" />
+        <div><div class="dash-label">Today's character</div><div class="character-name" id="dailyCharacterName">Nobita's Teacher</div><div class="character-caption" id="dailyCharacterCaption">Complete your missions to unlock a new character</div><div class="character-percent" id="dailyCharacterPercent">0% complete</div></div>
       </div>
       <p class="progress-note" id="smartMotivation"></p>
     </div>
@@ -357,7 +370,7 @@ function showTab(id,btn){ document.querySelectorAll(".tab,.tabBtn").forEach(x=>x
 function motivation(){
   const g = activeGoal();
   const t = countdownParts(g.date);
-  document.getElementById("headerMotivation").innerHTML = `Da Thadiya, welcome back! Only <b>${t.days} days and ${t.hours} hours</b> left to ${g.name}! Work hard, you are getting close!`;
+  document.getElementById("headerMotivation").innerHTML = `Lock In — welcome back! Only <b>${t.days} days and ${t.hours} hours</b> left to ${g.name}! Work hard, you are getting close!`;
 }
 function evaluateDay(dateKey){ const missions=getMissionsForDate(dateKey); const done=completions[dateKey]||{}; const missed=missions.filter(m=>!done[m]); const complete=missions.length-missed.length; const pct=missions.length?Math.round(complete/missions.length*100):0; dayResults[dateKey]={status: pct===100 ? "green":"partial", missed, complete, total:missions.length, pct}; localSave(); }
 function autoCheckPastDays(){ const yKey=addDays(todayKey(),-1); if(!dayResults[yKey]) evaluateDay(yKey); }
@@ -452,11 +465,49 @@ function getTrackStatus(){ const g=activeGoal(); const latest=latestWeightForMis
 function weeklyStats(){ let complete=0,total=0,perfect=0,best={day:"-",pct:-1}; for(let i=6;i>=0;i--){ const key=addDays(todayKey(),-i); const s=missionStats(key); complete+=s.complete; total+=s.total; if(s.total && s.complete===s.total) perfect++; const label=new Date(key+"T12:00:00").toLocaleString("default",{weekday:"short"}); if(s.pct>best.pct) best={day:label,pct:s.pct}; } const last=latestWeight(); const weekAgoKey=addDays(todayKey(),-7); const before=[...weights].filter(w=>new Date(w.date)<=new Date(weekAgoKey)).pop() || weights[0]; const change=before ? (last.weight-before.weight) : 0; return {complete,total,perfect,best,change}; }
 function currentStreak(){ let streak=0; for(let i=0;i<365;i++){ const key=addDays(todayKey(),-i); const s=missionStats(key); if(s.total && s.complete===s.total) streak++; else break; } return streak; }
 function setRing(id,textId,pct,color){ const deg=Math.max(0,Math.min(100,pct))*3.6; document.getElementById(id).style.background=`conic-gradient(${color} ${deg}deg, #1e293b ${deg}deg)`; document.getElementById(textId).textContent=Math.round(Math.max(0,Math.min(100,pct)))+"%"; }
+
+// Character selection uses the SAME daily percentage as the mission ring.
+const lockInCharacters = [
+  {name:"Nobita's Teacher",file:"teacher.png"},
+  {name:"Gian",file:"gian.png"},
+  {name:"Shizuka",file:"shizuka.png"},
+  {name:"Suneo",file:"suneo.png"},
+  {name:"Nobita",file:"nobita.png"},
+  {name:"Doraemon",file:"doraemon.png"}
+];
+let previousCharacterPercent = null;
+function renderCharacterProgress(stats){
+  const pct=Math.max(0,Math.min(100,stats.pct));
+  const stage=pct===100?5:Math.floor(pct/20);
+  const character=lockInCharacters[stage];
+  document.getElementById("dailyCharacterImage").src="assets/characters/"+character.file;
+  document.getElementById("dailyCharacterImage").alt=character.name;
+  document.getElementById("dailyCharacterName").textContent=character.name;
+  document.getElementById("dailyCharacterPercent").textContent=pct+"% complete";
+  document.getElementById("dailyCharacterCaption").textContent=pct===100?"Perfect day — you locked in!":`${stats.complete} of ${stats.total} missions complete`;
+  // Only celebrate an actual transition, not a fresh page load or Firebase hydration.
+  if(previousCharacterPercent!==null && previousCharacterPercent<100 && pct===100) launchLockInConfetti();
+  previousCharacterPercent=pct;
+}
+function launchLockInConfetti(){
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const palette=['#1595d3','#f6c847','#e94045','#ffffff'];
+  for(let i=0;i<34;i++){
+    const part=document.createElement('span');part.className='confetti-piece';
+    part.style.left=(Math.random()*100)+'vw';part.style.background=palette[i%palette.length];
+    part.style.setProperty('--drift',(Math.random()*180-90)+'px');
+    part.style.animationDelay=(Math.random()*250)+'ms';
+    document.body.appendChild(part);
+    part.addEventListener('animationend',()=>part.remove(),{once:true});
+  }
+}
+
 function renderDashboard(){
   const g = activeGoal();
   const today = todayKey();
   const latest = latestWeightForMission(g);
   const ms = missionStats(today);
+  renderCharacterProgress(ms);
   const t = countdownParts(g.date);
   const lost = Math.max(0, g.startWeight - latest.weight);
   const totalToLose = g.startWeight - g.targetWeight;

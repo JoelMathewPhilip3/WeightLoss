@@ -11,6 +11,7 @@ import android.os.VibratorManager
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -103,7 +104,7 @@ class MainActivity : Activity() {
         root.gravity = Gravity.CENTER_HORIZONTAL
         root.setPadding(dp(8), dp(10), dp(8), dp(24))
 
-        val title = text("DA THADIYA", 18f, GOLD, true)
+        val title = text("LOCK IN", 18f, CYAN, true)
         title.gravity = Gravity.CENTER
         root.addView(title, matchWrap())
 
@@ -290,6 +291,25 @@ class MainActivity : Activity() {
         navigation.addView(nextDay, fixedWrap(42, 40))
 
         summaryCard.addView(navigation, matchWrap(top = 10))
+
+        // Locally bundled progress portrait: no HTTP request, polling or extra Firebase field.
+        val characterResource = when (stats.percent) {
+            in 0..19 -> R.drawable.character_teacher
+            in 20..39 -> R.drawable.character_gian
+            in 40..59 -> R.drawable.character_shizuka
+            in 60..79 -> R.drawable.character_suneo
+            in 80..99 -> R.drawable.character_nobita
+            else -> R.drawable.character_doraemon
+        }
+        val characterFace = ImageView(this)
+        characterFace.setImageResource(characterResource)
+        characterFace.scaleType = ImageView.ScaleType.CENTER_CROP
+        characterFace.background = roundedCard("#173d5b", CYAN, 60f)
+        characterFace.clipToOutline = true
+        val characterParams = LinearLayout.LayoutParams(dp(66), dp(66))
+        characterParams.gravity = Gravity.CENTER_HORIZONTAL
+        characterParams.setMargins(0, dp(5), 0, dp(5))
+        summaryCard.addView(characterFace, characterParams)
     }
 
     private fun renderMissions() {
@@ -771,20 +791,20 @@ class MainActivity : Activity() {
     )
 
     companion object {
-        val BLACK = Color.parseColor("#000000")
-        val DARK_CARD = Color.parseColor("#101418")
+        val BLACK = Color.parseColor("#102238")
+        val DARK_CARD = Color.parseColor("#162c45")
         val WHITE = Color.parseColor("#f8fafc")
         val MUTED = Color.parseColor("#94a3b8")
-        val GOLD = Color.parseColor("#f5c451")
+        val GOLD = Color.parseColor("#f6c847")
         val GREEN = Color.parseColor("#22c55e")
         val RED = Color.parseColor("#ef4444")
-        val CYAN = Color.parseColor("#38bdf8")
+        val CYAN = Color.parseColor("#1595d3")
     }
 }
 
 class ProgressRingView(context: android.content.Context) : View(context) {
     var progress: Int = 0
-    var ringColor: Int = Color.parseColor("#f5c451")
+    var ringColor: Int = Color.parseColor("#f6c847")
 
     private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
 
@@ -803,7 +823,7 @@ class ProgressRingView(context: android.content.Context) : View(context) {
         paint.style = android.graphics.Paint.Style.STROKE
         paint.strokeWidth = stroke
         paint.strokeCap = android.graphics.Paint.Cap.ROUND
-        paint.color = Color.parseColor("#1f2937")
+        paint.color = Color.parseColor("#243b54")
         canvas.drawArc(rect, -90f, 360f, false, paint)
 
         paint.color = ringColor

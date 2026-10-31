@@ -7,7 +7,9 @@
 
     <application
         android:theme="@style/WatchTheme"
-        android:label="Da Thadiya Watch"
+        android:label="Lock In Watch"
+        android:icon="@drawable/logo"
+        android:roundIcon="@drawable/logo"
         android:usesCleartextTraffic="false"
         android:allowBackup="true"
         android:supportsRtl="true">
