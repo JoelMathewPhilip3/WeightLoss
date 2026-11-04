@@ -528,7 +528,7 @@ class MainActivity : Activity() {
         dayResults[selectedDate] = mapOf(
             "status" to if (stats.percent == 100) "green" else "partial",
             "missed" to missed,
-            "complete" to stats.complete,
+            "complete" to stats.done,
             "total" to stats.total,
             "pct" to stats.percent
         )
