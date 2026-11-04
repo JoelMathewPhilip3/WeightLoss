@@ -47,6 +47,9 @@ class MainActivity : Activity() {
     private var missionRules: List<Map<String, Any>> = emptyList()
     private var excludedMissionsByDate: MutableMap<String, Any> = mutableMapOf()
     private var weights: MutableList<MutableMap<String, Any>> = mutableListOf()
+    private var stepsByDate: Map<String, Any> = emptyMap()
+    private var stepTargetsByDate: Map<String, Any> = emptyMap()
+    private var stepTrackingStartDate: String? = null
     private var targetWeight: Double = 91.0
     private var tempWeight: Double = 98.7
 
@@ -156,6 +159,9 @@ class MainActivity : Activity() {
     }
 
     private fun applyCloudData(data: Map<String, Any>) {
+        stepsByDate = (data["stepsByDate"] as? Map<String, Any>) ?: emptyMap()
+        stepTargetsByDate = (data["stepTargetsByDate"] as? Map<String, Any>) ?: emptyMap()
+        stepTrackingStartDate = data["stepTrackingStartDate"] as? String
         missionsByDate = (data["missionsByDate"] as? Map<String, Any>)?.toMutableMap() ?: mutableMapOf()
         completions = (data["completions"] as? Map<String, Any>)?.toMutableMap() ?: mutableMapOf()
         dayResults = (data["dayResults"] as? Map<String, Any>)?.toMutableMap() ?: mutableMapOf()
@@ -315,31 +321,44 @@ class MainActivity : Activity() {
         summaryCard.addView(characterFace, characterParams)
     }
 
+    private fun isStepMission(name: String): Boolean = Regex("^\\s*[\\d,]+\\s+steps?\\s*$", RegexOption.IGNORE_CASE).matches(name)
+
+    private fun weightedStepMission(date: String, name: String): Boolean =
+        (stepTrackingStartDate?.let { date >= it } == true || stepsByDate.containsKey(date)) && isStepMission(name)
+
+    private fun stepsForDate(date: String): Int? = (stepsByDate[date] as? Number)?.toInt()?.coerceAtLeast(0)
+
+    private fun stepTargetForDate(date: String): Int =
+        ((stepTargetsByDate[date] as? Number)?.toInt() ?: 10000).coerceAtLeast(1)
+
+    private fun stepCredit(date: String): Double =
+        (stepsForDate(date)?.let { it.toDouble() / stepTargetForDate(date) * 10.0 } ?: 0.0).coerceIn(0.0, 10.0)
+
     private fun renderMissions() {
         missionContainer.removeAllViews()
-
         val missions = selectedMissions()
         val doneMap = selectedCompletions()
-
         missions.forEach { mission ->
-            val done = doneMap[mission] as? Boolean ?: false
+            val weightedStep = weightedStepMission(selectedDate, mission)
+            val done = if (weightedStep) {
+                (stepsForDate(selectedDate) ?: -1) >= stepTargetForDate(selectedDate)
+            } else doneMap[mission] as? Boolean ?: false
             val card = missionCard(mission, done)
-
-            card.setOnClickListener {
-                toggleMission(mission)
+            if (weightedStep) {
+                val label = card.getChildAt(0) as? TextView
+                label?.text = "Daily Steps"
+                val progressText = card.getChildAt(1) as? TextView
+                val recorded = stepsForDate(selectedDate)?.let { "%,d".format(Locale.US, it) } ?: "Not recorded"
+                val target = "%,d".format(Locale.US, stepTargetForDate(selectedDate))
+                progressText?.text = "$recorded / $target\n+${String.format(Locale.US, "%.1f", stepCredit(selectedDate))}% of 10%\nEdit on phone"
+                card.isClickable = false
+            } else {
+                card.setOnClickListener { toggleMission(mission) }
             }
-
             missionContainer.addView(card)
         }
-
-        val stats = missionStats()
-        if (stats.percent == 100) {
-            val perfect = text(
-                "✓ Perfect Day",
-                18f,
-                GREEN,
-                true
-            )
+        if (missionStats().percent == 100) {
+            val perfect = text("✓ Perfect Day", 18f, GREEN, true)
             perfect.gravity = Gravity.CENTER
             perfect.background = roundedCard("#06160d", GREEN, 20f)
             perfect.setPadding(dp(16), dp(18), dp(16), dp(18))
@@ -415,6 +434,7 @@ class MainActivity : Activity() {
     }
 
     private fun toggleMission(mission: String) {
+        if (weightedStepMission(selectedDate, mission)) return
         val statsBefore = missionStats()
 
         val doneMap = selectedCompletions()
@@ -499,24 +519,18 @@ class MainActivity : Activity() {
     private fun updateDayResult() {
         val missions = selectedMissions()
         val doneMap = selectedCompletions()
-
-        val missed = missions.filter {
-            !(doneMap[it] as? Boolean ?: false)
+        val stats = missionStats()
+        val missed = missions.filter { name ->
+            if (weightedStepMission(selectedDate, name)) {
+                (stepsForDate(selectedDate) ?: -1) < stepTargetForDate(selectedDate)
+            } else !(doneMap[name] as? Boolean ?: false)
         }
-
-        val complete = missions.size - missed.size
-        val pct = if (missions.isEmpty()) {
-            0
-        } else {
-            ((complete.toDouble() / missions.size) * 100).roundToInt()
-        }
-
         dayResults[selectedDate] = mapOf(
-            "status" to if (pct == 100) "green" else "partial",
+            "status" to if (stats.percent == 100) "green" else "partial",
             "missed" to missed,
-            "complete" to complete,
-            "total" to missions.size,
-            "pct" to pct
+            "complete" to stats.complete,
+            "total" to stats.total,
+            "pct" to stats.percent
         )
     }
 
@@ -597,18 +611,18 @@ class MainActivity : Activity() {
     private fun missionStats(): MissionStats {
         val missions = selectedMissions()
         val done = selectedCompletions()
-
-        val complete = missions.count {
-            done[it] as? Boolean ?: false
-        }
-
-        val pct = if (missions.isEmpty()) {
-            0
-        } else {
-            ((complete.toDouble() / missions.size) * 100).roundToInt()
-        }
-
-        return MissionStats(complete, missions.size, pct)
+        val stepMissions = missions.filter { weightedStepMission(selectedDate, it) }
+        val otherMissions = missions.filterNot { it in stepMissions }
+        val otherDone = otherMissions.count { done[it] as? Boolean ?: false }
+        val stepReached = stepMissions.isNotEmpty() &&
+            (stepsForDate(selectedDate) ?: -1) >= stepTargetForDate(selectedDate)
+        val complete = otherDone + (if (stepReached) stepMissions.size else 0)
+        val percent = if (stepMissions.isNotEmpty()) {
+            ((if (otherMissions.isNotEmpty()) 90.0 * otherDone / otherMissions.size else 0.0) +
+                stepCredit(selectedDate)).roundToInt().coerceIn(0, 100)
+        } else if (missions.isEmpty()) 0 else
+            (100.0 * otherDone / missions.size).roundToInt()
+        return MissionStats(complete, missions.size, if (stepMissions.isNotEmpty() && complete < missions.size) percent.coerceAtMost(99) else percent)
     }
 
     private fun changeMissionDay(days: Int) {
