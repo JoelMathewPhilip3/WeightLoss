@@ -428,13 +428,19 @@ function dailyStepCount(dateKey){ const n=Number(stepsByDate[dateKey]); return O
 function stepCreditForDate(dateKey){ const count=dailyStepCount(dateKey); return count===null?0:Math.min(10,count/dailyStepTarget(dateKey)*10); }
 function computedMissionStats(dateKey){
   const missions=getMissionsForDate(dateKey), done=completions[dateKey]||{};
-  const stepMissions=hasWeightedSteps(dateKey)?missions.filter(isStepMission):[];
-  const nonStep=missions.filter(m=>!stepMissions.includes(m));
+  const tracking=hasWeightedSteps(dateKey);
+  // Legacy step missions are not counted twice after activating the dedicated step tracker.
+  // On older dates, retain the original mission-based scoring and history.
+  const nonStep=tracking?missions.filter(m=>!isStepMission(m)):missions;
   const doneNonStep=nonStep.filter(m=>!!done[m]).length;
-  const stepDone=stepMissions.length>0&&dailyStepCount(dateKey)!==null&&dailyStepCount(dateKey)>=dailyStepTarget(dateKey);
-  const complete=doneNonStep+(stepDone?stepMissions.length:0);
-  const pct=stepMissions.length ? Math.round((nonStep.length?90*doneNonStep/nonStep.length:0)+stepCreditForDate(dateKey)) : (missions.length?Math.round(missions.filter(m=>!!done[m]).length/missions.length*100):0);
-  return {missions,complete,total:missions.length,pct:stepMissions.length&&complete<missions.length?Math.min(99,pct):Math.min(100,pct),stepDone,stepMissions};
+  const stepDone=tracking&&dailyStepCount(dateKey)!==null&&dailyStepCount(dateKey)>=dailyStepTarget(dateKey);
+  const complete=doneNonStep+(stepDone?1:0);
+  const total=nonStep.length+(tracking?1:0);
+  const rawPct=tracking?(nonStep.length?90*doneNonStep/nonStep.length:0)+stepCreditForDate(dateKey)
+                       :(total?100*doneNonStep/total:0);
+  // A rounded-up score must never show 100 before every applicable goal is complete.
+  const pct=Math.min(complete===total?100:99,Math.round(rawPct));
+  return {missions:nonStep,complete,total,pct,stepDone,tracking};
 }
 function renderStepEditor(){
   const label=document.getElementById("stepDateLabel"); if(!label)return;
@@ -478,7 +484,8 @@ function motivation(){
 }
 function evaluateDay(dateKey){
  const stats=computedMissionStats(dateKey),done=completions[dateKey]||{};
- const missed=stats.missions.filter(m=>isStepMission(m)&&hasWeightedSteps(dateKey)?!stats.stepDone:!done[m]);
+ const missed=stats.missions.filter(m=>!done[m]);
+ if(stats.tracking&&!stats.stepDone) missed.push("Daily Steps");
  dayResults[dateKey]={status:stats.pct===100?"green":"partial",missed,complete:stats.complete,total:stats.total,pct:stats.pct};localSave();
 }
 function autoCheckPastDays(){ const yKey=addDays(todayKey(),-1); if(!dayResults[yKey]) evaluateDay(yKey); }
@@ -490,12 +497,12 @@ function renderMissionCards(containerId,dateKey,editable){
  const wrap=document.getElementById(containerId);wrap.innerHTML="";
  const missions=getMissionsForDate(dateKey);completions[dateKey]=completions[dateKey]||{};
  missions.forEach((mission,i)=>{
-  const step=isStepMission(mission)&&hasWeightedSteps(dateKey);
-  const done=step?dailyStepCount(dateKey)!==null&&dailyStepCount(dateKey)>=dailyStepTarget(dateKey):!!completions[dateKey][mission];
+  if(hasWeightedSteps(dateKey)&&isStepMission(mission)) return; // Dedicated Daily Steps section handles this.
+  const done=!!completions[dateKey][mission];
   const div=document.createElement("div");div.className="mission-card"+(done?" done":"");
-  const nameHtml=editable&&!step?`<input value="${escapeHTML(mission)}" onchange="editMissionForDate('${dateKey}',${i},this.value)" />`:`<div class="mission-name">${step?"Daily Steps":escapeHTML(mission)}</div>`;
-  const status=step?`${dailyStepCount(dateKey)===null?"Not recorded":dailyStepCount(dateKey).toLocaleString()} / ${dailyStepTarget(dateKey).toLocaleString()} steps · +${stepCreditForDate(dateKey).toFixed(1).replace(/\.0$/,'')}% of 10%`:(done?"Completed":"Tap complete when finished");
-  div.innerHTML=`<div class="mission-main"><div class="mission-check">${done?"✓":""}</div><div>${nameHtml}<div class="mission-status">${escapeHTML(status)}</div></div></div><div class="mission-actions">${step?'<span class="badge">Update in Daily Steps</span>':`<button class="${done?'red':'green'}" onclick="toggleMissionForDate('${dateKey}',${i})">${done?'Undo':'Complete'}</button>`}${editable&&!step?`<button onclick="removeMissionForDate('${dateKey}',${i})">Remove</button>`:""}</div>`;
+  const nameHtml=editable?`<input value="${escapeHTML(mission)}" onchange="editMissionForDate('${dateKey}',${i},this.value)" />`:`<div class="mission-name">${escapeHTML(mission)}</div>`;
+  const status=done?"Completed":"Tap complete when finished";
+  div.innerHTML=`<div class="mission-main"><div class="mission-check">${done?"✓":""}</div><div>${nameHtml}<div class="mission-status">${escapeHTML(status)}</div></div></div><div class="mission-actions"><button class="${done?'red':'green'}" onclick="toggleMissionForDate('${dateKey}',${i})">${done?'Undo':'Complete'}</button>${editable?`<button onclick="removeMissionForDate('${dateKey}',${i})">Remove</button>`:""}</div>`;
   wrap.appendChild(div);
  });
 }
